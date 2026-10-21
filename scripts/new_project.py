@@ -79,4 +79,4 @@ else:
     print('未安装品牌扩展包（陪伴师参考图与 Logo，可选）；使用通用人物规范即可。')
 engine_fixes.make_qa(hs / 'scripts/qa.py', P / 'qc/huashu_qa.py')
 (P / 'design/_env.json').write_text(json.dumps({'embedded_source': 'upstream/huashu-art-motion', 'skill': str(SKILL), 'workspace': str(ws)}, ensure_ascii=False, indent=1), encoding='utf-8')
-print(f'\n项目已建好：{P}\n下一步（见 references/PIPELINE_SOP.md）：\n 1. 填 brief/BRIEF.md、brief/narration.txt、brief/title.txt（原稿逐字锁定）\n 2. 生成配音 → assets/audio/，更新 design/config.json\n 3. 写 design/cast.json（妈妈/班主任标 wardrobe_role）和 design/shots.json（每镜选择 wardrobe_references），再运行 gen_sprites.py')
+print(f'\n项目已建好：{P}\n下一步（见 references/PIPELINE_SOP.md）：\n 1. 填 brief/BRIEF.md、brief/narration.txt、brief/title.txt（原稿逐字锁定）\n 2. 生成配音 → assets/audio/，更新 design/config.json；发试听后停下等用户，用户明确通过后运行 lock_voice.py（不锁定不能生图）\n 3. 写 design/cast.json（妈妈/班主任标 wardrobe_role）和 design/shots.json（每镜选择 wardrobe_references），再运行 gen_sprites.py')

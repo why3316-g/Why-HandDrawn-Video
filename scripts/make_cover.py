@@ -80,6 +80,10 @@ def main():
     if a.text_only:
         return
     illus_rel = f'assets/images/cover-illus-{ver}.png'
+    if a.emit_image_prompt or not (a.skip_gen or (P / illus_rel).exists()):
+        from lock_voice import enforce_voice_locked
+        try: enforce_voice_locked(P)
+        except ValueError as e: raise SystemExit('停止：' + str(e))
     if a.emit_image_prompt:
         shots = json.loads((P / 'design/shots.json').read_text(encoding='utf-8'))
         cast = json.loads((P / 'design/cast.json').read_text(encoding='utf-8'))

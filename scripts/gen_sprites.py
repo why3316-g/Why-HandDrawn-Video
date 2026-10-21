@@ -210,6 +210,9 @@ def main():
     from voice_cast import enforce
     try: enforce(P)
     except ValueError as e: print('停止：' + str(e)); sys.exit(3)
+    from lock_voice import enforce_voice_locked
+    try: enforce_voice_locked(P)
+    except ValueError as e: print('停止：' + str(e)); sys.exit(5)
     tool = 'emit' if a.emit_only else a.image_backend
     if tool == 'volcano':
         import imagegen_volcano as iv

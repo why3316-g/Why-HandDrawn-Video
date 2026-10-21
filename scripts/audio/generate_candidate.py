@@ -231,7 +231,10 @@ if __name__=='__main__':
     parser.add_argument('--confirm-voice-change',action='store_true',help='同一全文已用另一音色合成过，用户明确同意换声再合成时才加')
     parser.add_argument('--preflight',action='store_true')
     args=parser.parse_args()
-    try: run(args.project,args.version,args.preflight,args.voice,args.confirm_voice_change,args.provider)
+    try:
+        run(args.project,args.version,args.preflight,args.voice,args.confirm_voice_change,args.provider)
+        if not args.preflight:
+            print('下一步：跑 check_voice.py，把试听消息发给用户后结束本轮回复，等用户试听；用户明确说通过后才运行 lock_voice.py。没锁定前不写表演表、不生图。')
     except Exception as exc:
         # Credential-bearing transport errors are never echoed.
         print(json.dumps({'success':False,'error_type':type(exc).__name__,'resubmit_allowed':False}))

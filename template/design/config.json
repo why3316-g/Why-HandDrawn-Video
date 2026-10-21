@@ -1,6 +1,7 @@
 {
  "narration": "brief/narration.txt",
  "voice": "dayi",
+ "voice_lock_required": true,
  "narrator_is_protagonist": false,
  "protagonist_cast": "主角key",
  "volc_json": "assets/audio/<火山词级时间戳>.json",
