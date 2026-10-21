@@ -95,7 +95,7 @@
       "derived_guidance": [
         {
           "path": "references/ENGINE_GUIDE.md",
-          "sha256": "25b190974f31a52e4ce96e5126d15caffa50000bff0140bacb6e98151d5c51a5",
+          "sha256": "5ea8db5eaf59bbafcb98608f0b8795b9ed098cecda764ab47eff3d0d7e5b760e",
           "method_sources": {
             "SKILL.md": "1e4dffc3766442f2aedf4681dd492dae8345be0dfa532c2ca42194075d155cc6",
             "references/09-视频动画语法.md": "bcc55abee660c2c7d5f415f38f5dbb6fd5fb32fd65bb2eb5cd4dffcf944f38b0",

@@ -142,11 +142,13 @@ def panel_exit_issues(events, scenes, pan_lead=.5, tolerance=.2):
     return issues
 
 
-def panel_rhythm_issues(events, scenes, max_duration=8.0, max_still=4.0, min_dur=.2):
-    """逐板节奏硬检查：画板最长 8 秒，板内无有效新笔画的空档最多 4 秒。"""
+def panel_rhythm_issues(events, scenes, max_duration=8.0, max_still=4.0, min_dur=.2, min_duration=2.5):
+    """逐板节奏硬检查：画板最短 2.5 秒（2026-10-21 新增：去掉镜头进出 0.9 秒后只剩约 1.6 秒可看）、最长 8 秒，板内无有效新笔画的空档最多 4 秒。"""
     issues = []
     for row in panel_rhythm_report(events, scenes, min_dur):
         index, name = row['index'], row['id']
+        if row['duration'] < min_duration - 1e-9:
+            issues.append(f"板{index} {name} 时长 {row['duration']:.2f}s，短于 {min_duration:.1f}s：并入前后相邻画板（合并后超 8 秒就换个语义转折点重切）")
         if row['duration'] > max_duration + 1e-9:
             issues.append(f"板{index} {name} 时长 {row['duration']:.2f}s，超过 {max_duration:.1f}s")
         if row['longest_still_gap'] > max_still + 1e-9:

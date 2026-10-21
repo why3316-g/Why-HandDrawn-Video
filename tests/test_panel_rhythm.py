@@ -26,6 +26,13 @@ class PanelRhythmTests(unittest.TestCase):
         ]
         self.assertEqual(panel_rhythm_issues(events, scenes), [])
 
+    def test_flags_too_short_panel(self):
+        scenes = [{'index': 0, 'id': 'blink', 'start': 0, 'end': 1.9}, {'index': 1, 'id': 'ok', 'start': 1.9, 'end': 4.4}]
+        events = [{'index': 0, 'at': 0.1, 'dur': 1.0, 'kind': 'hero'}, {'index': 1, 'at': 2.0, 'dur': 1.0, 'kind': 'hero'}]
+        issues = panel_rhythm_issues(events, scenes)
+        self.assertEqual(len(issues), 1)
+        self.assertIn('短于 2.5s', issues[0])
+
     def test_ignores_short_fragments_as_motion(self):
         scenes = [{'index': 0, 'id': 'still', 'start': 0, 'end': 5}]
         events = [{'index': 0, 'at': 0.1, 'dur': 0.1, 'kind': 'line'}]
