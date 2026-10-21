@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
-from hdv.lint import panel_rhythm_issues
+from hdv.lint import panel_rhythm_issues, panel_exit_issues
 
 
 class PanelRhythmTests(unittest.TestCase):
@@ -30,6 +30,24 @@ class PanelRhythmTests(unittest.TestCase):
         scenes = [{'index': 0, 'id': 'still', 'start': 0, 'end': 5}]
         events = [{'index': 0, 'at': 0.1, 'dur': 0.1, 'kind': 'line'}]
         self.assertTrue(panel_rhythm_issues(events, scenes))
+
+
+class PanelExitTests(unittest.TestCase):
+    scenes = [{'index': 0, 'id': 'a', 'start': 0, 'end': 6}, {'index': 1, 'id': 'b', 'start': 6, 'end': 12}]
+
+    def test_flags_text_finishing_during_pan(self):
+        # 镜头 5.5s 开始离开板 0；这句 5.84s 才写完（学霸请假片审片实例同型）
+        events = [{'index': 0, 'at': 5.2, 'dur': .64, 'kind': 'text', 'str': '还算什么'}]
+        issues = panel_exit_issues(events, self.scenes)
+        self.assertEqual(len(issues), 1)
+        self.assertIn('还算什么', issues[0])
+
+    def test_accepts_small_overlap_and_last_panel(self):
+        events = [
+            {'index': 0, 'at': 5.0, 'dur': .65, 'kind': 'line'},           # 5.65 ≤ 5.7
+            {'index': 1, 'at': 11.5, 'dur': .9, 'kind': 'text', 'str': '结尾'},  # 最后一块不检查
+        ]
+        self.assertEqual(panel_exit_issues(events, self.scenes), [])
 
 
 if __name__ == '__main__':

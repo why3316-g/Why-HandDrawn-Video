@@ -124,6 +124,24 @@ def panel_rhythm_report(events, scenes, min_dur=.2):
     return report
 
 
+def panel_exit_issues(events, scenes, pan_lead=.5, tolerance=.2):
+    """画完再走镜头（2026-10-21 新增）：渲染器在下一块画板起点前 pan_lead 秒开始平移离开本板，
+    本板最后一笔最晚在平移开始后 tolerance 秒内画完，否则观众看不到写完的字/符号。
+    最后一块画板没有离场平移，不检查。旧版只在时间审查表里提示"超出本块窗口"（容许拖到平移后 0.7 s），
+    导致独立审片在成片阶段反复挑出"写完时已在平移"而返工。"""
+    issues = []
+    for scene in scenes[:-1]:
+        index, name = scene['index'], scene.get('id', '')
+        pan = float(scene['end']) - pan_lead
+        late = [e for e in events if e.get('index') == index and float(e['at']) + float(e['dur']) > pan + tolerance + 1e-9]
+        if late:
+            worst = max(late, key=lambda e: float(e['at']) + float(e['dur']))
+            end = float(worst['at']) + float(worst['dur'])
+            what = worst.get('str') or worst.get('id') or worst.get('tag') or worst['kind']
+            issues.append(f"板{index} {name} 「{str(what)[:12]}」{end:.2f}s 才画完，镜头 {pan:.2f}s 已开始离开本板（最晚 {pan + tolerance:.2f}s）：提前起笔、缩短 dur 或删掉这笔")
+    return issues
+
+
 def panel_rhythm_issues(events, scenes, max_duration=8.0, max_still=4.0, min_dur=.2):
     """逐板节奏硬检查：画板最长 8 秒，板内无有效新笔画的空档最多 4 秒。"""
     issues = []

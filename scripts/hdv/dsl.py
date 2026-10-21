@@ -94,9 +94,10 @@ class Film:
                 'data': {'image': self.hand, 'handTip': self.hand_tip, 'header': {'first': self.header_first, 'other': self.header_other},
                          'scenes': scenes, 'events': self.EV, 'captions': captions, 'spriteLibrary': self.lib},
                 'cues': [{'at': 0, 'kind': 'asset', 'image': '../assets/images/' + v['file'], 'data': {'group': k}} for k, v in self.lib['source_images'].items()]}
-        from .lint import lint, panel_rhythm_issues, panel_rhythm_report
+        from .lint import lint, panel_rhythm_issues, panel_rhythm_report, panel_exit_issues
         errs, warns = lint(self.EV)
         errs.extend(panel_rhythm_issues(self.EV, scenes))
+        errs.extend(panel_exit_issues(self.EV, scenes))
         # 越界与开头自检（2026-10-13 修复：人物图越出画板会泄漏到相邻画板；开头必须先画人）
         from .lint import text_w as _tw
         for e in self.EV:
@@ -130,7 +131,7 @@ class Film:
         for sc in scenes:
             evs = [e for e in self.EV if e['index'] == sc['index']]
             last = max(e['at'] + e['dur'] for e in evs); first = min(e['at'] for e in evs)
-            flag = '  <<< 超出本块窗口' if last > sc['end'] + .2 else ''
+            flag = '  <<< 超出本块窗口' if last > sc['end'] - .3 and sc is not scenes[-1] else ''
             metrics = next(row for row in rhythm if row['index'] == sc['index'])
             report.append(f"{sc['index']:>2} {sc['id']:<12} 窗口 {sc['start']:6.2f}–{sc['end']:6.2f}  事件 {first:6.2f}–{last:6.2f}  板长 {metrics['duration']:.2f}s  最长无笔画 {metrics['longest_still_gap']:.2f}s{flag}")
         print('\n'.join(report))
