@@ -21,12 +21,13 @@ def workspace_for(project):
         raise ValueError('Project must be inside the selected workspace projects directory.')
     return workspace
 
-VOICES = {'dayi': 'zh_male_dayi_uranus_bigtts', 'xiaohe': 'zh_female_xiaohe_uranus_bigtts'}   # 大壹（默认）；小何 2.0（女学生第一人称口吻）
+VOICES = {'dayi': 'zh_male_dayi_uranus_bigtts', 'xiaohe': 'zh_female_xiaohe_uranus_bigtts',
+          'jitang': 'zh_female_jitangnv_uranus_bigtts'}   # 大壹（默认）；小何 2.0（女学生第一人称口吻）；鸡汤女 2.0（家长角度且家长是妈妈）
 
 
 def check_private_voice(values):
     if values.get('DOUBAO_SPEECH_VOICE_TYPE') not in VOICES.values():
-        raise ValueError('Private voice is not an approved voice (dayi/xiaohe).')
+        raise ValueError('Private voice is not an approved voice (dayi/xiaohe/jitang).')
 
 
 def other_voice_receipt(project, text_hash, voice_id):
@@ -146,7 +147,7 @@ def ensure_wav(path):
 def run(project,version='v01',preflight=False,voice='dayi',confirm_voice_change=False,provider='auto'):
     project=Path(project).resolve()
     workspace=workspace_for(project)
-    if voice not in VOICES: raise ValueError('Unknown voice; use dayi or xiaohe.')
+    if voice not in VOICES: raise ValueError('Unknown voice; use dayi, xiaohe or jitang.')
     voice_id=VOICES[voice]
     if not re.fullmatch(r'v\d{2,}',version): raise ValueError('Invalid version.')
     text=(project/'brief/narration.txt').read_text(encoding='utf-8').strip()
@@ -226,7 +227,7 @@ if __name__=='__main__':
     parser.add_argument('--project',required=True)
     parser.add_argument('--version',default='v01')
     parser.add_argument('--provider',default='auto',choices=('auto','volcengine','edge'),help='auto=配了火山密钥用火山、没配用免费微软语音；也可在工作区 .hdv-workspace.json 写 tts_provider 固定')
-    parser.add_argument('--voice',default='dayi',choices=sorted(VOICES),help='dayi=大壹（默认）；xiaohe=小何 2.0，仅学生第一人称且为女生或性别不明的稿子')
+    parser.add_argument('--voice',default='dayi',choices=sorted(VOICES),help='dayi=大壹（默认）；xiaohe=小何 2.0，仅学生第一人称且为女生或性别不明的稿子；jitang=鸡汤女 2.0，仅家长角度且家长是妈妈的稿子（家长是爸爸用 dayi）')
     parser.add_argument('--confirm-voice-change',action='store_true',help='同一全文已用另一音色合成过，用户明确同意换声再合成时才加')
     parser.add_argument('--preflight',action='store_true')
     args=parser.parse_args()

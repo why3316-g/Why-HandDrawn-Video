@@ -1,11 +1,11 @@
 """声音与主角性别一致：学生第一人称稿里，配音就是主角本人，男声=男学生，女声=女学生。
 
-design/config.json 记录：voice（dayi 男声 / xiaohe 女声）、narrator_is_protagonist（学生第一人称为 true）、
+design/config.json 记录：voice（dayi 男声 / xiaohe 女声 / jitang 女声）、narrator_is_protagonist（学生第一人称为 true）、
 protagonist_cast（cast.json 里主角的 key）。cast.json 里主角必须写 gender: male/female，且 identity 描述不能和性别冲突。
 第三人称、家长或陪伴师口吻（narrator_is_protagonist 为 false）不受此约束。性别无法从稿子判断时按声音规则默认小何（女声），主角就画女生。"""
 import re
 
-VOICE_GENDER = {'dayi': 'male', 'xiaohe': 'female'}
+VOICE_GENDER = {'dayi': 'male', 'xiaohe': 'female', 'jitang': 'female'}
 _FEMALE_WORDS = re.compile(r'\b(girl|woman|female|she|her|daughter)\b', re.I)
 _MALE_WORDS = re.compile(r'\b(boy|man|male|he|his|son)\b', re.I)
 

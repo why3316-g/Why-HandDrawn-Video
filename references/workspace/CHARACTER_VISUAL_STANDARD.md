@@ -33,7 +33,7 @@
 
 ## 声音决定主角性别
 
-**声音决定主角性别（学生第一人称稿）：**配音就是主角本人。男声（大壹）→ 主角画成男学生；女声（小何 2.0）→ 主角画成女学生；稿子判断不了性别时按音色规则默认小何，主角就画女生。生图前把 `voice`（dayi/xiaohe）、`narrator_is_protagonist`（学生第一人称为 true）、`protagonist_cast`（主角在 cast.json 的 key）写进 `design/config.json`，cast.json 主角 `gender` 写 male/female 且与声音一致；`gen_sprites.py` 与 `make_manifest.py` 会检查，不一致拒绝运行。第三人称、家长、陪伴师口吻不受此限，主角性别按稿子。逐图验收要核对图里主角性别与声音一致。
+**声音决定主角性别（学生第一人称稿）：**配音就是主角本人。男声（大壹）→ 主角画成男学生；女声（小何 2.0）→ 主角画成女学生（鸡汤女 2.0 只用于家长角度，叙述者是家长，不适用本条）；稿子判断不了性别时按音色规则默认小何，主角就画女生。生图前把 `voice`（dayi/xiaohe）、`narrator_is_protagonist`（学生第一人称为 true）、`protagonist_cast`（主角在 cast.json 的 key）写进 `design/config.json`，cast.json 主角 `gender` 写 male/female 且与声音一致；`gen_sprites.py` 与 `make_manifest.py` 会检查，不一致拒绝运行。第三人称、家长（含鸡汤女 2.0 的家长角度稿）、陪伴师口吻不受此限，主角性别按稿子。逐图验收要核对图里主角性别与声音一致。
 
 ## 图片复用硬上限
 

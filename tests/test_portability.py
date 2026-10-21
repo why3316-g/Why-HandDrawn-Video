@@ -145,6 +145,9 @@ class PortabilityTests(unittest.TestCase):
             result = module.run(p, preflight=True, voice='xiaohe', provider='volcengine')
             self.assertEqual(result['voice_id'], 'zh_female_xiaohe_uranus_bigtts')
             self.assertTrue(result['output'].endswith('narration-volcengine-xiaohe-full-v01.mp3'))
+            result = module.run(p, preflight=True, voice='jitang', provider='volcengine')
+            self.assertEqual(result['voice_id'], 'zh_female_jitangnv_uranus_bigtts')
+            self.assertTrue(result['output'].endswith('narration-volcengine-jitang-full-v01.mp3'))
             with self.assertRaises(ValueError):
                 module.run(p, preflight=True, voice='yunhao', provider='volcengine')
 
