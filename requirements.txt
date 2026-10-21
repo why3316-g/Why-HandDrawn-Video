@@ -1,0 +1,9 @@
+# 本包 Python 运行依赖。uv、FFmpeg/FFprobe（static-ffmpeg）、Chromium 与转录模型由 env_check.py --install 自动补齐。
+numpy>=1.24,<3
+Pillow>=10,<13
+playwright>=1.40,<2
+faster-whisper>=1.0,<2
+requests>=2.31,<3
+edge-tts>=7.3.1,<8
+uv>=0.4
+static-ffmpeg>=2.7

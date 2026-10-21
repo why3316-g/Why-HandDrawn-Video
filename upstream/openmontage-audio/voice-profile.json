@@ -1,0 +1,15 @@
+{
+  "provider": "volcengine_doubao",
+  "voice_id": "zh_male_dayi_uranus_bigtts",
+  "resource_id": "seed-tts-2.0",
+  "speech_rate": 10,
+  "speed_multiplier": 1.1,
+  "format": "mp3",
+  "sample_rate": 24000,
+  "enable_timestamp": true,
+  "submit_url": "https://openspeech.bytedance.com/api/v3/tts/submit",
+  "query_url": "https://openspeech.bytedance.com/api/v3/tts/query",
+  "private_env_file": ".private/volcengine.env",
+  "voice_validation": "skip",
+  "voice_validation_reason": "User explicitly requested this source project fixed VoiceType and ResourceID; IAM catalog credentials absent."
+}

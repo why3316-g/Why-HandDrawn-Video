@@ -1,0 +1,173 @@
+{
+  "schema": 2,
+  "edition": "lean",
+  "snapshot_date": "2026-10-14",
+  "local_customizations": [
+    {
+      "path": "references/workspace/CHARACTER_VISUAL_STANDARD.md",
+      "source": "docs/CHARACTER_VISUAL_STANDARD.md",
+      "reason": "同步新增的妈妈服饰模板、多人构图模板和班主任角色模板，保留工作区人物规范的一致性。"
+    },
+    {
+      "path": "references/PROMPT_PACK.md",
+      "source": "docs/CHARACTER_VISUAL_STANDARD.md",
+      "reason": "在生图提示词模板中补充角色与版式候选先供选择、获选后再用于正式镜头的执行要求。"
+    }
+  ],
+  "sources": [
+    {
+      "name": "huashu-art-motion",
+      "source": "https://github.com/alchaincyf/huashu-art-motion",
+      "commit": null,
+      "version_note": "本机现用快照；无可核实提交号，不声明最新版",
+      "scope": "当前固定手绘必要子集；不是独立Skill",
+      "files": {
+        "LICENSE": "6d6a2a9caf2e6d2b76974050427053b2892d8aa4c33fd168ce63a537fcee9d96",
+        "scripts/engine/clip.html": "a926d6931cdc94c7821f47a4ec1030a8cd51871f743d97f5e63e7f39b9731459",
+        "scripts/engine/clip.js": "fe45cd48c96178b855e45fd87cf6db4c3294adda2360d191e2457d3130a10d31",
+        "scripts/engine/lib/diagram.js": "98b15ba5f883dd95eca2ff52ba1d768c10a5bea7862bd13aee6d84b875e2b8c5",
+        "scripts/engine/lib/fonts/LICENSES.md": "86f6ef039e4e2112aef0888bdd77a9d76b8e0198050990a88c499a11c11ed59b",
+        "scripts/engine/lib/fonts/LXGWWenKai-500.woff": "734bd187392579417ac83effe31d37b9de43c7b290bcb400800456511ed79e8f",
+        "scripts/engine/lib/fonts/NotoSansSC-500.woff": "928d841b1ec663ebce82593568cbc19749fe652f88b8ec960723b7d87b551512",
+        "scripts/engine/lib/fonts/OFL.txt": "67c5d5206b96f8340b95fabd02ae60701e0b20ce2594d976216f1065e5aa3822",
+        "scripts/engine/lib/fonts.js": "3ca69446a9a3c16fc5b1d3326fcbd574d2983a2c0fbd933d869503ac3d7c326b",
+        "scripts/engine/lib/kit.js": "77821ce0ae8278c462b5669449bca473659c95317c3b62fc8b008e2bdf87209f",
+        "scripts/engine/lib/motion.js": "7e70b8ef328c7497fe1403d37700fcdfbb2cc9d2175f16ea46ae3e69b49dbe15",
+        "scripts/engine/lib/paint.js": "aa61a2cb14b0bbd96e072865fb8b24bdd118b4f62aca3ff2c320ca17593aca25",
+        "scripts/engine/lib/util.js": "a695bb3f6047a1cdf3b65385b0fffd1fcf8c4d8b665119e31ee1e2f43034dc7c",
+        "scripts/engine/render.py": "45fae71840798563dae2a51e9211833d10fa7f2a57a6e4771149986c390b1497",
+        "scripts/qa.py": "76a773fa59d2409488db0149e2641ee0531b594d5bf4547c91d1b8d26abe119c"
+      },
+      "original_sha256": {
+        "LICENSE": "6d6a2a9caf2e6d2b76974050427053b2892d8aa4c33fd168ce63a537fcee9d96",
+        "scripts/engine/clip.html": "9c9a1f2301c306e147ad53549aea986ac2943194d62b9a578a2a22d9dd7c735e",
+        "scripts/engine/clip.js": "561d71fefcdbce4c783ff42775ee7a10cea957ce2617273fa435f0cae69e59fd",
+        "scripts/engine/lib/diagram.js": "98b15ba5f883dd95eca2ff52ba1d768c10a5bea7862bd13aee6d84b875e2b8c5",
+        "scripts/engine/lib/fonts/LICENSES.md": "00b5f86c4d5162e6fee6d600b527c052933eb2884a61a5fab0f89fa4d4656ecd",
+        "scripts/engine/lib/fonts/LXGWWenKai-500.woff": "734bd187392579417ac83effe31d37b9de43c7b290bcb400800456511ed79e8f",
+        "scripts/engine/lib/fonts/NotoSansSC-500.woff": "928d841b1ec663ebce82593568cbc19749fe652f88b8ec960723b7d87b551512",
+        "scripts/engine/lib/fonts/OFL.txt": "67c5d5206b96f8340b95fabd02ae60701e0b20ce2594d976216f1065e5aa3822",
+        "scripts/engine/lib/fonts.js": "8d5ac65f41bd6df79a0f913adf7f425d46c847cc5d8ed831eccdc80b1c29531d",
+        "scripts/engine/lib/kit.js": "77821ce0ae8278c462b5669449bca473659c95317c3b62fc8b008e2bdf87209f",
+        "scripts/engine/lib/motion.js": "7e70b8ef328c7497fe1403d37700fcdfbb2cc9d2175f16ea46ae3e69b49dbe15",
+        "scripts/engine/lib/paint.js": "aa61a2cb14b0bbd96e072865fb8b24bdd118b4f62aca3ff2c320ca17593aca25",
+        "scripts/engine/lib/util.js": "86045b05656183cd7017e43fb891aa65d1a1e76477885c4dbee81635ee8b7a1d",
+        "scripts/engine/render.py": "eb2abd1a159a63a58fbf9da6bfc5e06febaeb31aec21ac091d351fc8159ed5dc",
+        "scripts/qa.py": "435fa30c91b432b0fd25a72e139c7a883b619c251a3545c9b460de192fcc3942"
+      },
+      "changes": {
+        "scripts/engine/clip.html": {
+          "original_sha256": "9c9a1f2301c306e147ad53549aea986ac2943194d62b9a578a2a22d9dd7c735e",
+          "current_sha256": "a926d6931cdc94c7821f47a4ec1030a8cd51871f743d97f5e63e7f39b9731459",
+          "reason": "只加载当前手绘传递依赖，不请求其他语法的库"
+        },
+        "scripts/engine/clip.js": {
+          "original_sha256": "561d71fefcdbce4c783ff42775ee7a10cea957ce2617273fa435f0cae69e59fd",
+          "current_sha256": "fe45cd48c96178b855e45fd87cf6db4c3294adda2360d191e2457d3130a10d31",
+          "reason": "只允许当前语法，移除其他路径与失效指导"
+        },
+        "scripts/engine/lib/fonts/LICENSES.md": {
+          "original_sha256": "00b5f86c4d5162e6fee6d600b527c052933eb2884a61a5fab0f89fa4d4656ecd",
+          "current_sha256": "86f6ef039e4e2112aef0888bdd77a9d76b8e0198050990a88c499a11c11ed59b",
+          "reason": "只保留实际两款字体的版权与OFL说明"
+        },
+        "scripts/engine/lib/fonts.js": {
+          "original_sha256": "8d5ac65f41bd6df79a0f913adf7f425d46c847cc5d8ed831eccdc80b1c29531d",
+          "current_sha256": "3ca69446a9a3c16fc5b1d3326fcbd574d2983a2c0fbd933d869503ac3d7c326b",
+          "reason": "只注册当前两款字体，避免启动加载已删字体"
+        },
+        "scripts/engine/render.py": {
+          "original_sha256": "eb2abd1a159a63a58fbf9da6bfc5e06febaeb31aec21ac091d351fc8159ed5dc",
+          "current_sha256": "45fae71840798563dae2a51e9211833d10fa7f2a57a6e4771149986c390b1497",
+          "reason": "只保留spec无声渲染和抽帧入口；保留编码、取帧和Windows补丁契约"
+        },
+        "scripts/qa.py": {
+          "original_sha256": "435fa30c91b432b0fd25a72e139c7a883b619c251a3545c9b460de192fcc3942",
+          "current_sha256": "76a773fa59d2409488db0149e2641ee0531b594d5bf4547c91d1b8d26abe119c",
+          "reason": "只保留spec QA；原文字追踪与helper算法不改"
+        },
+        "scripts/engine/lib/util.js": {
+          "original_sha256": "86045b05656183cd7017e43fb891aa65d1a1e76477885c4dbee81635ee8b7a1d",
+          "current_sha256": "a695bb3f6047a1cdf3b65385b0fffd1fcf8c4d8b665119e31ee1e2f43034dc7c",
+          "reason": "仅将缺字诊断指向包内ENGINE_GUIDE；不改基础库计算/绘制算法"
+        }
+      },
+      "derived_guidance": [
+        {
+          "path": "references/ENGINE_GUIDE.md",
+          "sha256": "25b190974f31a52e4ce96e5126d15caffa50000bff0140bacb6e98151d5c51a5",
+          "method_sources": {
+            "SKILL.md": "1e4dffc3766442f2aedf4681dd492dae8345be0dfa532c2ca42194075d155cc6",
+            "references/09-视频动画语法.md": "bcc55abee660c2c7d5f415f38f5dbb6fd5fb32fd65bb2eb5cd4dffcf944f38b0",
+            "references/10-角色.md": "0c69bc849688069ee59bfe619eb7c44c48dbeee0324ee2bcc87bbe98d41af74b",
+            "references/images.md": "313bee677064eb46ee13c88c74effeecdb536579d7e8a25e23ddf9a2a06357e3",
+            "references/04-纯代码绘制.md": "b41ba3faf32d24cb020d140ba7c0e95d9ad71462049dff2f390f4a18e532b53c",
+            "references/07-正面经验.md": "2dfd06211aa6d95c961be94b64084c5da2c6d234422e285304c26b7c501587a6",
+            "references/动画语法/y3_whiteboard.md": "1932f128fec943341bc0bb18a29a65ca347071faa23dccc7c1434506bcb3547f"
+          }
+        },
+        {
+          "path": "references/WHITEBOARD_GRAMMAR_Y3.md",
+          "sha256": "f080dec81c66b8a5c74e1d8bd08cd57173b28d98e5c9cc2cb3a29af3346b4d57",
+          "method_sources": {
+            "references/动画语法/y3_whiteboard.md": "1932f128fec943341bc0bb18a29a65ca347071faa23dccc7c1434506bcb3547f"
+          }
+        },
+        {
+          "path": "references/CRAFT_LESSONS.md",
+          "sha256": "b407e24a8e19bd95273c3b39ef956f6c2eaab4661daabbd94439c90ffd481355",
+          "method_sources": {
+            "references/07-正面经验.md": "2dfd06211aa6d95c961be94b64084c5da2c6d234422e285304c26b7c501587a6"
+          }
+        }
+      ]
+    },
+    {
+      "name": "canvas-design",
+      "source": "https://github.com/anthropics/skills",
+      "commit": "b9e19e6f44773509fbdd7001d77ff41a49a486c1",
+      "version_note": "固定官方提交",
+      "scope": "当前固定手绘必要子集；不是独立Skill",
+      "files": {
+        "LICENSE.txt": "bc6b3af2f331cbc7fb0da1344efb2cbe5877a31498b4d70dbc7000f3405a1362"
+      },
+      "original_sha256": {
+        "LICENSE.txt": "bc6b3af2f331cbc7fb0da1344efb2cbe5877a31498b4d70dbc7000f3405a1362"
+      },
+      "changes": {},
+      "derived_guidance": [
+        {
+          "path": "references/COVER_ART_DIRECTION.md",
+          "sha256": "91cf2d440fa9003a5e4b3165b07b118558b6d0f2a7675ed91274a618940920d7",
+          "method_sources": {
+            "SKILL.md": "a1f288079624402f30682753c1d43920b6664785698d21d3e7aa197450a6448b"
+          }
+        }
+      ]
+    },
+    {
+      "name": "openmontage-audio",
+      "source": "用户授权的 OpenMontage-NEW 配音实现副本",
+      "commit": null,
+      "version_note": "本机现用快照；无可核实提交号，不声明最新版",
+      "scope": "当前固定手绘必要子集；不是独立Skill",
+      "files": {
+        "tools/__init__.py": "d342fd0161500874ddea41e89d2961ad8fd2286417e859fd964dd64bfaf74cbc",
+        "tools/audio/__init__.py": "d342fd0161500874ddea41e89d2961ad8fd2286417e859fd964dd64bfaf74cbc",
+        "tools/audio/doubao_tts.py": "8900693d6fabc989dc291aaf8aece17f997ec1ecaa30d1268039931e081652bd",
+        "tools/audio/doubao_voice_catalog.py": "00cb287ab2299b2d7d1c6525dd47e2fe1594bc9ccd8da8b63a45cf3eaf00ca95",
+        "tools/base_tool.py": "eb7e1041c2924aa21c42117ac3ca9f702208e95fc7f12616e93ff0115d1aa88e",
+        "voice-profile.json": "32803dc59405825affc8930c6e5e2eb1705adfd2de9d362cf8020fe88a27fd34"
+      },
+      "original_sha256": {
+        "tools/__init__.py": "d342fd0161500874ddea41e89d2961ad8fd2286417e859fd964dd64bfaf74cbc",
+        "tools/audio/__init__.py": "d342fd0161500874ddea41e89d2961ad8fd2286417e859fd964dd64bfaf74cbc",
+        "tools/audio/doubao_tts.py": "8900693d6fabc989dc291aaf8aece17f997ec1ecaa30d1268039931e081652bd",
+        "tools/audio/doubao_voice_catalog.py": "00cb287ab2299b2d7d1c6525dd47e2fe1594bc9ccd8da8b63a45cf3eaf00ca95",
+        "tools/base_tool.py": "eb7e1041c2924aa21c42117ac3ca9f702208e95fc7f12616e93ff0115d1aa88e",
+        "voice-profile.json": "32803dc59405825affc8930c6e5e2eb1705adfd2de9d362cf8020fe88a27fd34"
+      },
+      "changes": {}
+    }
+  ]
+}

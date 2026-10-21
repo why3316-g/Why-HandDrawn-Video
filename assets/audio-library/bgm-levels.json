@@ -1,0 +1,18 @@
+{
+ "说明": "每首曲目可登记专属目标响度（--bgm-lufs）；存在登记值时优先使用。未登记的新曲目自动使用 -28 LUFS 并记录在混音报告，不要求用户试听认可后才能继续。",
+ "情绪史诗-Last Reunion-70bpm.mp3": {
+  "bgm_lufs": -28,
+  "evidence": "项目 20261012-xiaobin-chess-v01，xiaobin-final-D-lastreunion-v02.mp4；实测说话时配乐比口播低 13.8 dB（压低前），成片 -16.7 LUFS / 峰值 -1.4 dBTP",
+  "approved_by_user": "2026-10-12（原默认 -34 时几乎听不到，-28 认可）"
+ },
+ "治愈钢琴-秋的思念-96bpm.mp3": {
+  "bgm_lufs": -25,
+  "evidence": "项目 20261010-chuyi-qingjia-zhongdian-v01，renders/chuyi-qingjia-bgm-v06.mp4；实测说话时配乐比口播低 9.4 dB（压低前），成片 -16.78 LUFS / 峰值 -1.39 dBTP；此前 -34（v04）、-27（v05）用户都觉得偏小",
+  "approved_by_user": "2026-10-12（听 v06 后：\"背景音乐的音量可以，可以固定下来成为工作流中背景音乐的音量\"）"
+ },
+ "夜色钢琴-夜的钢琴曲-104bpm.mp3": {
+  "bgm_lufs": -23,
+  "evidence": "用户于 2026-10-13 指定该曲默认音量 23（即 -23 LUFS），未做试听版比较",
+  "approved_by_user": "2026-10-13（用户指定默认音量 -23）"
+ }
+}

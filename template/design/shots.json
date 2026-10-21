@@ -1,0 +1,36 @@
+{
+ "style_ref": "assets/images/style-ref-C.png",
+ "shots": [
+  {
+   "id": "hook",
+   "asset": "hook",
+   "cast": "主角key",
+   "wardrobe_references": {},
+   "narration": "该画板对应的口播原文",
+   "scene": "English scene/pose description for the image prompt",
+   "source_objects": ["图内已存在物件及所在位置"],
+   "overlay_objects": [
+    {
+     "object": "代码准备新增的物件或符号",
+     "narration_phrase": "原文对应短语",
+     "meaning": "该元素在此处表达的具体含义"
+    }
+   ],
+   "roles": [
+    {
+     "cast_id": "主角key",
+     "name": "角色名",
+     "age": 14,
+     "emotion": "",
+     "face": "眉眼嘴",
+     "body": "肩背手脚",
+     "gaze": "视线",
+     "action": "动作",
+     "avoid": "禁止项"
+    }
+   ],
+   "observation": "生成后逐图验收：写你实际看到的内容；通过后把 reviewed 设为 true",
+   "reviewed": false
+  }
+ ]
+}

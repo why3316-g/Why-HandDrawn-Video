@@ -1,0 +1,16 @@
+{
+ "narration": "brief/narration.txt",
+ "voice": "dayi",
+ "narrator_is_protagonist": false,
+ "protagonist_cast": "主角key",
+ "volc_json": "assets/audio/<火山词级时间戳>.json",
+ "voice_wav": "assets/audio/<44.1k单声道对齐母带>.wav",
+ "voice_mp3": "assets/audio/<火山成品>.mp3",
+ "header_first": [
+  "第一行标题（一句话）",
+  "第二行标题（一句话）"
+ ],
+ "header_other": "<主角名>的故事",
+ "spec_out": "design/spec-film.json",
+ "tail_seconds": 1.6
+}
