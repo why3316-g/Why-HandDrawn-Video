@@ -15,6 +15,7 @@ from verify_bundle import ROOT, verify
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--out', required=True, help='全新可写目录；拒绝覆盖')
+    parser.add_argument('--mode', choices=('portrait', 'landscape'), default='portrait', help='分别验收两种画幅')
     parser.add_argument('--online-runtime', action='store_true', help='仅允许 uv 补齐运行依赖；不调用付费服务')
     args = parser.parse_args()
     output = Path(args.out).resolve()
@@ -52,7 +53,7 @@ def main():
              "common.HOME=Path(sys.argv[2]); assert common.find_huashu()==common.SKILL/'upstream/huashu-art-motion'; "
              "assert common.find_story_visuals()==common.SKILL")
     run([sys.executable, '-c', probe, skill / 'scripts', output / 'empty user home'])
-    run([sys.executable, skill / 'scripts/new_project.py', 'smoke', '--workspace', workspace, '--date', '20261014'])
+    run([sys.executable, skill / 'scripts/new_project.py', 'smoke', '--workspace', workspace, '--date', '20261014', '--mode', args.mode])
     project = workspace / 'projects/20261014-smoke-v01'
     narration = ['孩子躺在家里玩手机。', '妈妈坐在旁边看着他。']
     (project / 'brief/narration.txt').write_text('\n'.join(narration), encoding='utf-8')
@@ -105,12 +106,14 @@ from hdv import Clock,Film,INK,OR
 cfg=json.loads((P/'design/config.json').read_text(encoding='utf-8'))
 c=Clock(P/cfg['narration'],P/cfg['volc_json'])
 F=Film(P,c,header_first=cfg['header_first'],header_other=cfg['header_other'])
+wide=cfg.get('mode')=='landscape'
+cx,top,h=(1380,300,550) if wide else (540,700,550)
 F.panel(0,'hook',0)
-F.hero(0,'hook',540,700,550,c.T('孩子')[0],c.T('玩手机')[0]-c.T('孩子')[0])
+F.hero(0,'hook',cx,top,h,c.T('孩子')[0],c.T('玩手机')[0]-c.T('孩子')[0])
 F.text(0,'玩手机',145,480,72,c.T('玩手机')[0],.85,OR)
 F.line(0,[(145,530),(560,530)],c.T('手机')[0],.45,INK,6,False)
 F.panel(1,'next',c.T('妈妈')[0]-.1)
-F.hero(1,'next',540,700,550,c.T('妈妈')[0],c.T('看着他')[0]-c.T('妈妈')[0])
+F.hero(1,'next',cx,top,h,c.T('妈妈')[0],c.T('看着他')[0]-c.T('妈妈')[0])
 F.text(1,'看着他',145,480,72,c.T('看着他')[0],.85,OR)
 F.line(1,[(145,530),(560,530)],c.T('他')[0],.35,INK,6,False)
 caps=[{'start':c.line_span(i)[0],'end':c.line_span(i)[1],'text':t} for i,t in enumerate(c.lines)]
@@ -124,6 +127,8 @@ F.build(caps,out='design/spec-film.json')
     # 中文封面走真实现有合成脚本，插画仅取随包画风参考；没有付费生图。
     cover_cfg = {'name': 'smoke', 'size': 100, 'title_top': 180,
                  'lines': [[[title[:5], 0]], [[title[5:], 1]]], 'illus_width': 520, 'illus_center_y': 1280}
+    if args.mode == 'landscape':
+        cover_cfg.update(size=76, title_top=220, illus_width=400, illus_center_x=1440, illus_center_y=570)
     (project / 'design/cover.json').write_text(json.dumps(cover_cfg, ensure_ascii=False), encoding='utf-8')
     (project / 'design/cover-philosophy-v01.md').write_text('仅为迁移技术夹具：白底、中文标题、橙色强调与包内参考。不是用户审核过的正式封面。', encoding='utf-8')
     shutil.copyfile(skill / 'assets/style-ref-C.png', project / 'assets/images/cover-illus-v01.png')
@@ -139,6 +144,7 @@ F.build(caps,out='design/spec-film.json')
     (library / 'LICENSES.md').write_text('| 文件 | 来源 | 授权类型 | 可商用 |\n|---|---|---|---|\n| fixture.wav | 本测试合成音调 | 仅作测试夹具 | 是 |\n', encoding='utf-8')
     script('mix_audio.py', '--video', 'renders/smoke-visual-v01.mp4', '--out', 'renders/smoke-bgm-v01.mp4', '--bgm', 'fixture.wav')
     script('add_cover_intro.py', '--video', 'renders/smoke-bgm-v01.mp4', '--cover', 'renders/smoke-cover-v01.png', '--out', 'renders/smoke-final-v01.mp4')
+    script('export_website.py', '--video', 'renders/smoke-final-v01.mp4', '--cover', 'renders/smoke-cover-v01.png', '--out', 'renders/website-v01')
     script('opening_check.py', '--video', 'renders/smoke-final-v01.mp4')
     script('panel_check.py', '--video', 'renders/smoke-final-v01.mp4', '--offset', '.2')
     script('sync_report.py')
@@ -154,17 +160,30 @@ F.build(caps,out='design/spec-film.json')
     after = probe(final)
     video = lambda data: next(s for s in data['streams'] if s['codec_type'] == 'video')
     assert int(video(after)['nb_frames']) == int(video(before)['nb_frames']) + 6
-    assert (video(after)['width'], video(after)['height'], video(after)['r_frame_rate']) == (1080, 1920, '30/1')
+    dimensions = (1920, 1080) if args.mode == 'landscape' else (1080, 1920)
+    assert (video(after)['width'], video(after)['height'], video(after)['r_frame_rate']) == (*dimensions, '30/1')
     assert any(s['codec_type'] == 'audio' for s in after['streams'])
     raw = subprocess.check_output(['ffmpeg', '-v', 'error', '-i', str(final), '-t', '0.16', '-vn', '-ac', '1', '-ar', '44100', '-f', 's16le', '-'])
     assert np.max(np.abs(np.frombuffer(raw, dtype='<i2').astype(np.int32))) <= 8, '封面片头非静音'
     def frame(path, seconds):
-        return np.frombuffer(subprocess.check_output(['ffmpeg', '-v', 'error', '-ss', str(seconds), '-i', str(path), '-frames:v', '1', '-vf', 'scale=270:480', '-pix_fmt', 'rgb24', '-f', 'rawvideo', '-']), np.uint8).astype(float)
+        thumb = '480:270' if args.mode == 'landscape' else '270:480'
+        return np.frombuffer(subprocess.check_output(['ffmpeg', '-v', 'error', '-ss', str(seconds), '-i', str(path), '-frames:v', '1', '-vf', 'scale=' + thumb, '-pix_fmt', 'rgb24', '-f', 'rawvideo', '-']), np.uint8).astype(float)
     from PIL import Image
-    cover = np.array(Image.open(project / 'renders/smoke-cover-v01.png').convert('RGB').resize((270, 480))).ravel()
+    thumb = (480, 270) if args.mode == 'landscape' else (270, 480)
+    cover = np.array(Image.open(project / 'renders/smoke-cover-v01.png').convert('RGB').resize(thumb)).ravel()
     assert float(np.mean(np.abs(frame(final, 0) - cover))) < 6, '第0帧不是封面'
     assert float(np.mean(np.abs(frame(final, .2) - frame(project / 'renders/smoke-bgm-v01.mp4', 0)))) < 6, '第6帧未回到正片'
-    report = {'pass': True, 'fixture_only': True, 'isolated_skill': str(skill), 'project': str(project),
+    delivery = json.loads((project / 'renders/website-v01/delivery.json').read_text(encoding='utf-8'))
+    assert delivery['pass'] and delivery['caption_offset_seconds'] == .2
+    web = probe(project / 'renders/website-v01/video.mp4')
+    assert int(video(web)['nb_frames']) == int(video(after)['nb_frames'])
+    assert (video(web)['width'], video(web)['height']) == dimensions
+    # faststart 实际 atom 顺序；不能只相信命令参数或回执字段。
+    payload = (project / 'renders/website-v01/video.mp4').read_bytes()
+    assert payload.index(b'moov') < payload.index(b'mdat')
+    vtt = (project / 'renders/website-v01/captions.vtt').read_text(encoding='utf-8')
+    assert '00:00:00.300 --> ' in vtt, 'VTT未计首6帧偏移'
+    report = {'pass': True, 'fixture_only': True, 'mode': args.mode, 'isolated_skill': str(skill), 'project': str(project),
               'video': str(final), 'video_sha256': hashlib.sha256(final.read_bytes()).hexdigest(),
               'commands': commands, 'frame_count': int(video(after)['nb_frames']),
               'qa_deterministic': True, 'paid_calls': 0,

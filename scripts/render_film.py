@@ -8,6 +8,7 @@ try: sys.stdout.reconfigure(encoding='utf-8')
 except Exception: pass
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import playwright_browsers, which
+from hdv.layout import project_layout, validate_spec_layout
 
 ap = argparse.ArgumentParser()
 ap.add_argument('--project', default='.')
@@ -24,6 +25,11 @@ cfg = json.loads((P / 'design/config.json').read_text(encoding='utf-8'))
 spec = Path(a.spec) if a.spec else P / cfg.get('spec_out', 'design/spec-film.json')
 if not spec.is_absolute():
     spec = P / spec
+layout = project_layout(P)
+try:
+    validate_spec_layout(json.loads(spec.read_text(encoding='utf-8')), layout)
+except ValueError as e:
+    sys.exit(str(e))
 env = dict(os.environ, PYTHONUTF8='1', PYTHONIOENCODING='utf-8')
 pb = playwright_browsers()
 if pb:
@@ -40,7 +46,7 @@ if a.stills:
     if a.sheet:
         from PIL import Image
         fs = sorted(d.glob('*.png'), key=lambda p: float(p.stem[1:]))
-        W, H, cols = 270, 480, 6
+        W, H, cols = (480, 270, 3) if layout['mode'] == 'landscape' else (270, 480, 6)
         S = Image.new('RGB', (W * cols, H * ((len(fs) + cols - 1) // cols)), 'white')
         for i, f in enumerate(fs):
             S.paste(Image.open(f).convert('RGB').resize((W, H)), ((i % cols) * W, (i // cols) * H))
@@ -65,4 +71,4 @@ d = json.loads(subprocess.check_output(['ffprobe', '-v', 'error', '-show_entries
 sp = json.loads(spec.read_text(encoding='utf-8'))
 want = round(sp['duration'] * sp['fps'])
 print(f"{d['width']}x{d['height']} {d['r_frame_rate']} 帧数 {d['nb_frames']}（期望 {want}）时长 {d['duration']}")
-sys.exit(0 if int(d['nb_frames']) == want else 2)
+sys.exit(0 if int(d['nb_frames']) == want and (d['width'], d['height']) == (layout['width'], layout['height']) else 2)

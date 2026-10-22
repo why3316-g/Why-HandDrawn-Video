@@ -1,4 +1,5 @@
 {
+ "mode": "portrait",
  "narration": "brief/narration.txt",
  "voice": "dayi",
  "voice_lock_required": true,

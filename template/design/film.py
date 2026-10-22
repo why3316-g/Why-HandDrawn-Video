@@ -9,14 +9,14 @@ if os.environ.get('HDV_SCRIPTS'): sys.path.insert(0, os.environ['HDV_SCRIPTS'])
 from hdv import Clock, Film, INK, OR, captions_from_breaks
 cfg = json.loads((P / 'design/config.json').read_text(encoding='utf-8'))
 clock = Clock(P / cfg['narration'], P / cfg['volc_json'])
-F = Film(P, clock, header_first=cfg['header_first'], header_other=cfg['header_other'])
+F = Film(P, clock, header_first=cfg['header_first'], header_other=cfg['header_other'], mode=cfg.get('mode', 'portrait'))
 S, E = F.S, F.E
 panel, text, line, hero, box, arrow, cross, check, bubble, phone, ell = F.panel, F.text, F.line, F.hero, F.box, F.arrow, F.cross, F.check, F.bubble, F.phone, F.ell
 
 # ======================= 画板定义（本视频专属）=======================
 # 【开头规范，必须遵守：references/OPENING_SPEC.md】第 1 块画板：人物 hero 起笔 ≤ 0.5 s；0–5 s 内除字幕外持续有新笔画（画元素、写关键词、圈/叉/勾/箭头），静止 ≤ 1.0 s；
 #   画的东西只来自口播，屏幕文字取口播原文，勾/叉等非重点标记用墨色（INK），橙色每块 ≤ 3–4 个。自检不通过会拒绝输出 spec。
-# 画板坐标：宽 1080，可见区 y 285–1455。每块画板：panel(序号, 'id', 起始秒)，起始 = 该意思单元第一句口播起点 - 0.1。
+# 画板坐标：portrait 宽1080、可见y285–1455；landscape 宽1920、可见y190–900，安全区与模板见 references/LANDSCAPE_SPEC.md。每块画板：panel(序号, 'id', 起始秒)，起始 = 该意思单元第一句口播起点 - 0.1。
 # 文字起笔 = S('口播里的原词')；人物 hero(序号, 'id', 中心x, 顶y, 高, 起笔, 时长)；id 必须与 design/shots.json 的镜头 id 对应。
 # 下面是占位示例，换成本视频的画板：
 # panel(0, 'hook', 0.0)

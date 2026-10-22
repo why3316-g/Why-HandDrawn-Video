@@ -1,5 +1,5 @@
 """新建一个 Why-HandDrawn-Video 项目：目录骨架 + 复制花叔引擎并打补丁 + 渲染语法 + 项目内库 + 固定素材。
-用法：python <skill>/scripts/new_project.py <英文短名> [--workspace 工作区根] [--date 20261010]
+用法：python <skill>/scripts/new_project.py <英文短名> [--workspace 工作区根] [--date 20261010] [--mode portrait|landscape]
 结果：<工作区>/projects/<日期>-<短名>-v01/ ，里面自包含（design/hdv 是项目内库，之后不再依赖 Skill 目录）。"""
 import argparse, datetime, json, re, shutil, sys
 from pathlib import Path
@@ -9,13 +9,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import find_huashu, find_workspace, companion_references, brand_logo
 import engine_fixes
 from wardrobe import copy_wardrobe_assets
+from hdv.layout import get_layout
 
 SKILL = Path(__file__).resolve().parents[1]
 ap = argparse.ArgumentParser()
 ap.add_argument('name')
 ap.add_argument('--workspace', default=None)
+ap.add_argument('--mode', choices=('portrait', 'landscape'), default='portrait', help='portrait 竖屏（默认）；landscape 网站宽屏')
 ap.add_argument('--date', default=datetime.date.today().strftime('%Y%m%d'))
 a = ap.parse_args()
+layout = get_layout(a.mode)
 if not re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*', a.name):
     sys.exit('短名只用英文小写字母、数字和中划线，例如 xiaoyu-return。')
 if not re.fullmatch(r'\d{8}', a.date):
@@ -60,6 +63,22 @@ for f in ('config.json', 'film.py', 'shots.json', 'cast.json', 'breaks.json'):
     shutil.copy(SKILL / 'template/design' / f, P / 'design' / f)
 for f in ('BRIEF.md', 'narration.txt', 'title.txt'):
     shutil.copy(SKILL / 'template/brief' / f, P / 'brief' / f)
+# 只修改本次新项目的画幅；既有项目不迁移、不覆盖。
+config_path = P / 'design/config.json'
+config = json.loads(config_path.read_text(encoding='utf-8'))
+config['mode'] = a.mode
+if a.mode == 'landscape':
+    config['header_first'] = ['本片主题（锁稿后填写）', '本节要点（取自口播）']
+    config['header_other'] = '本片主题'
+config_path.write_text(json.dumps(config, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
+brief_path = P / 'brief/BRIEF.md'
+brief = brief_path.read_text(encoding='utf-8').replace('1080×1920', f"{layout['width']}×{layout['height']}")
+brief += f'\n- 模式：{a.mode}\n'
+if a.mode == 'landscape':
+    brief = brief.replace('视频号竖屏；受众=厌学休学孩子的家长；目标=信任或种草；口吻=像人说话',
+                          '客户网站宽屏；受众/内容目标/口吻据原文章与客户要求确认')
+    brief += '- 文章转讲解：原文保存在 brief/；口播候选及原文对应表经用户确认后才锁定 narration.txt。版式与网站交付见 Skill references/LANDSCAPE_SPEC.md。\n'
+brief_path.write_text(brief, encoding='utf-8')
 shutil.copy(SKILL / 'template/STATUS.md', P / 'STATUS.md')
 for f in ('marker-hand-v02.png', 'marker-hand-meta-v02.json', 'style-ref-C.png'):
     shutil.copy(SKILL / 'assets' / f, P / 'assets/images' / f)

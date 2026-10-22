@@ -1,6 +1,6 @@
 ---
 name: why-handdrawn-video
-description: 把标题和口播稿做成固定画风（白纸线稿 + 橙色强调 + 马克笔手绘 + 暗色字幕条）的竖屏故事/讲解视频；给定标题和口播稿时使用。单包含制作、自检和审核所需资源，不用于其他画风或横屏。
+description: 把标题和口播稿制作成白纸线稿、橙色强调、马克笔逐笔手绘视频；支持视频号竖屏案例与网站16:9宽屏讲解，文章先改编并锁稿。不用于其他画风。
 ---
 
 # Why-HandDrawn-Video
@@ -8,6 +8,10 @@ description: 把标题和口播稿做成固定画风（白纸线稿 + 橙色强�
 只用本包完成现有固定手绘工作流；保持已批准的画风、剪辑和声音。标题正文逐字锁定，受众/平台/目标/口吻不清时先确认。运行软件由 `env_check.py --install` 自动补齐；配音密钥、生图渠道与账号按 README.md 配置。
 
 用户提供的稿件视为已确认的事实输入，不另审真实性、不索要证明。预检只报告制作环境与配置；“已验证/未验证”仅指制作质量与验收。保留原稿保真检查，不增编情节、效果或证据。
+
+## 画幅与输入
+
+默认 portrait（1080×1920），网站宽屏讲解用 landscape（1920×1080）；新建时加 `--mode landscape`。宽屏先读 `references/LANDSCAPE_SPEC.md`，它覆盖竖屏专属坐标、封面构图与案例题材限制，其他画风、声音与审核规则共用。文章先留存源文、改编为讲解稿并经用户确认，确认后的标题口播才逐字锁定；不能把资料文章直接视为已锁口播。网站只是渠道，实际受众按稿件决定。
 
 ## 开始
 
@@ -30,6 +34,7 @@ description: 把标题和口播稿做成固定画风（白纸线稿 + 橙色强�
 | 环节 | 必读 |
 |---|---|
 | 动画方法、引擎与事件表 | `references/ENGINE_GUIDE.md`、`STYLE_SPEC.md`、`LAYOUT_LIBRARY.md`；节奏手感与易错点见 `WHITEBOARD_GRAMMAR_Y3.md`、`CRAFT_LESSONS.md`（公开版不带样板案例，事件表写法见这些文件与 `template/design/film.py`） |
+| 网站宽屏、文章改口播、网站交付 | `references/LANDSCAPE_SPEC.md`（仅 landscape） |
 | 开头与画板安全 | `references/OPENING_SPEC.md` |
 | 全文配音（火山或免费微软）与私密配置 | `references/workspace/AUDIO_STANDARD.md` |
 | 人物表演、用色与复用 | `references/workspace/CHARACTER_VISUAL_STANDARD.md`、`PROMPT_PACK.md`；有自己的参考图扩展包时按其说明使用 |

@@ -95,7 +95,7 @@
       "derived_guidance": [
         {
           "path": "references/ENGINE_GUIDE.md",
-          "sha256": "5ea8db5eaf59bbafcb98608f0b8795b9ed098cecda764ab47eff3d0d7e5b760e",
+          "sha256": "b02aa8af56e3a8362460e13f6d4307b5fe1a3e0bfbde85aaf4ea4b806869f3ce",
           "method_sources": {
             "SKILL.md": "1e4dffc3766442f2aedf4681dd492dae8345be0dfa532c2ca42194075d155cc6",
             "references/09-视频动画语法.md": "bcc55abee660c2c7d5f415f38f5dbb6fd5fb32fd65bb2eb5cd4dffcf944f38b0",
@@ -104,7 +104,8 @@
             "references/04-纯代码绘制.md": "b41ba3faf32d24cb020d140ba7c0e95d9ad71462049dff2f390f4a18e532b53c",
             "references/07-正面经验.md": "2dfd06211aa6d95c961be94b64084c5da2c6d234422e285304c26b7c501587a6",
             "references/动画语法/y3_whiteboard.md": "1932f128fec943341bc0bb18a29a65ca347071faa23dccc7c1434506bcb3547f"
-          }
+          },
+          "local_extension": "2026-10-22：用户授权同一手绘语法增加网站宽屏配置，仅补模式路由；不修改上游动画算法。"
         },
         {
           "path": "references/WHITEBOARD_GRAMMAR_Y3.md",

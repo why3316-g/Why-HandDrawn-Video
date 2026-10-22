@@ -1,10 +1,15 @@
 // Why-HandDrawn-Video · 白板手绘渲染语法（C 线稿 + 握笔手逐笔画出）。结构取自 Codex 为小凯项目写的 xiaokai_C_whiteboard_v08.js：
-// 一条连续横向白板，每个镜头一块画板（宽 1120），相机在板间平移；人物线稿由骨架提取出的笔画路径逐笔描出；文字逐字手写；道具由线条画出；深色字幕条。
+// 一条连续横向白板，每个镜头一块画板（画幅布局由 spec.data.layout 决定），相机在板间平移；人物线稿由骨架提取出的笔画路径逐笔描出；文字逐字手写；道具由线条画出；深色字幕条。
 // 与 v08 的区别：①不含小凯的场景脚本、品牌徽标合成、旧时间重映射；②所有事件时间直接用音轨绝对时间（spec.data.events，由 design/film.py 依词级时间戳生成）。
-// 全部视觉常量见 references/STYLE_SPEC.md；改动本文件 = 改动风格，须走改编申请。
+// 竖屏视觉常量见 references/STYLE_SPEC.md，宽屏见 references/LANDSCAPE_SPEC.md；改动本文件 = 改动风格，须走改编申请。
 // 依赖 Skill 库：DG（drawPartial/zigzag/revealMask/hand/cum/pointAt/arcPts）、U。
 CLIPS.hand_drawn_marker = (() => {
-  const INK = '#171717', OR = '#ed7929', BG = '#ffffff', PANEL = 1120;
+  const INK = '#171717', OR = '#ed7929', BG = '#ffffff';
+  // 旧项目没有 data.layout 时保留原竖屏视觉；新项目由 Python 的唯一布局配置传入。
+  let L = null, PANEL = 1120;
+  const LEGACY = {mode:'portrait',width:1080,height:1920,panel_width:1120,content_top:285,content_bottom:1455,
+    separator_y:1430,separator_x:[120,925],clock:[932,322,24],caption_top:1438,caption_height:80,caption_baseline:1494,
+    caption_size:52,caption_small_size:48,header_x:85,header_first_y:[245,308],header_other_y:250,pen_enter_x:1280,pen_enter_bottom:1350};
   let strokes = [], hand, tip = [147, 119], scenes = [], spriteMeta = {}, spriteSources = {}, spriteBuffers = {};
   const smooth = (a, b, t) => { const p = U.clamp((t - a) / (b - a)); return p * p * (3 - 2 * p); };
   function addLine(e, off) {
@@ -69,6 +74,8 @@ CLIPS.hand_drawn_marker = (() => {
     return { tip: [s.x + tipP[0] * s.scale, s.y + tipP[1] * s.scale] };
   }
   function init(ctx) {
+    L = ctx.data.layout || LEGACY; PANEL = L.panel_width;
+    if (ctx.W !== L.width || ctx.H !== L.height) throw new Error('画幅与布局不一致，请重建事件表');
     spriteMeta = ctx.data.spriteLibrary.sprites; spriteSources = {}; spriteBuffers = {};
     for (const cue of ctx.cues) if (cue.kind === 'asset') spriteSources[cue.data.group] = ctx.IMG[cue.image];
     for (const [id, meta] of Object.entries(spriteMeta)) {
@@ -106,27 +113,30 @@ CLIPS.hand_drawn_marker = (() => {
   }
   function ambient(g, t, sc) {       // 点线随时间走、右上角小钟：表示故事时间在流动
     const x = sc.index * PANEL, lt = t - sc.start;
-    g.strokeStyle = OR; g.lineWidth = 3; g.lineCap = 'round'; g.save(); g.setLineDash([3, 15]); g.lineDashOffset = -t * 17; g.beginPath(); g.moveTo(x + 120, 1430); g.lineTo(x + 925, 1430); g.stroke(); g.restore();
-    g.strokeStyle = '#ccc'; g.lineWidth = 3; g.beginPath(); g.arc(x + 932, 322, 24, 0, Math.PI * 2); g.stroke();
-    for (let j = 0; j < 2; j++) { const a = lt * (j ? .16 : .65) - Math.PI / 2, r = j ? 12 : 19; g.beginPath(); g.moveTo(x + 932, 322); g.lineTo(x + 932 + Math.cos(a) * r, 322 + Math.sin(a) * r); g.stroke(); }
+    g.strokeStyle = OR; g.lineWidth = 3; g.lineCap = 'round'; g.save(); g.setLineDash([3, 15]); g.lineDashOffset = -t * 17; g.beginPath(); g.moveTo(x + L.separator_x[0], L.separator_y); g.lineTo(x + L.separator_x[1], L.separator_y); g.stroke(); g.restore();
+    const [clockX, clockY, clockR] = L.clock;
+    g.strokeStyle = '#ccc'; g.lineWidth = 3; g.beginPath(); g.arc(x + clockX, clockY, clockR, 0, Math.PI * 2); g.stroke();
+    for (let j = 0; j < 2; j++) { const a = lt * (j ? .16 : .65) - Math.PI / 2, r = j ? 12 : 19; g.beginPath(); g.moveTo(x + clockX, clockY); g.lineTo(x + clockX + Math.cos(a) * r, clockY + Math.sin(a) * r); g.stroke(); }
   }
   function caption(g, t, ctx) {
     const cap = ctx.data.captions.find(c => t >= c.start && t < c.end); if (!cap || ctx.data.captioned === false) return;
-    const size = [...cap.text].length > 17 ? 48 : 52; g.font = `${size}px "PuHui-Medium"`; g.textAlign = 'center';
-    const width = g.measureText(cap.text).width;
-    g.fillStyle = 'rgba(28,28,28,.90)'; g.beginPath(); g.roundRect(540 - width / 2 - 25, 1438, width + 50, 80, 14); g.fill(); g.fillStyle = '#fff'; g.fillText(cap.text, 540, 1494); g.textAlign = 'left';
+    let size = [...cap.text].length > 17 ? L.caption_small_size : L.caption_size; g.font = `${size}px "PuHui-Medium"`; g.textAlign = 'center';
+    let width = g.measureText(cap.text).width;
+    if (L.mode === 'landscape' && width > L.width - 100) { size *= (L.width - 100) / width; g.font = `${size}px \"PuHui-Medium\"`; width = g.measureText(cap.text).width; }
+    g.fillStyle = 'rgba(28,28,28,.90)'; g.beginPath(); g.roundRect(L.width / 2 - width / 2 - 25, L.caption_top, width + 50, L.caption_height, 14); g.fill(); g.fillStyle = '#fff'; g.fillText(cap.text, L.width / 2, L.caption_baseline); g.textAlign = 'left';
   }
   function draw(g, t, ctx) {
-    g.scale(ctx.W / 1080, ctx.W / 1080); g.fillStyle = BG; g.fillRect(0, 0, 1080, 1920);
+    g.scale(ctx.W / L.width, ctx.W / L.width); g.fillStyle = BG; g.fillRect(0, 0, L.width, L.height);
     const cam = camera(t), sc = scenes.filter(s => s.start <= t).at(-1) || scenes[0];
-    g.save(); g.beginPath(); g.rect(0, 285, 1080, 1170); g.clip(); g.translate(-cam, 0); let activeTip = null;
-    for (const s of strokes) { if (t < s.at || s.index * PANEL - cam > 1080 || (s.index + 1) * PANEL - cam < 0) continue;
-      g.save(); g.beginPath(); g.rect(s.index * PANEL, 285, 1080, 1170); g.clip();   // 每笔只画在自己的画板内，越界部分不泄漏到相邻画板
+    g.save(); g.beginPath(); g.rect(0, L.content_top, L.width, L.content_bottom - L.content_top); g.clip(); g.translate(-cam, 0); let activeTip = null;
+    for (const s of strokes) { if (t < s.at || s.index * PANEL - cam > L.width || (s.index + 1) * PANEL - cam < 0) continue;
+      g.save(); g.beginPath(); g.rect(s.index * PANEL, L.content_top, L.width, L.content_bottom - L.content_top); g.clip();   // 每笔只画在自己的画板内，越界部分不泄漏到相邻画板
       const q = U.clamp((t - s.at) / s.dur); g.strokeStyle = s.color; g.lineWidth = s.width || 6; g.lineCap = 'round'; g.lineJoin = 'round';
       if (s.fade) { g.globalAlpha = q; g.font = `${s.size}px "LXGWWenKai-500"`; g.fillStyle = s.color; g.fillText(s.str, s.x, s.y); g.restore(); continue; }   // 渐显文字：不用笔写，不进笔的轨迹
       const sr = s.kind === 'sprite' ? drawSprite(g, s, q) : null; const p = sr ? sr.tip : s.kind === 'text' ? drawText(g, s, q) : DG.drawPartial(g, s.p, s.cum, s.len * q); if (q < 1) activeTip = p; g.restore(); }
-    for (const s of scenes) { if (t >= s.start && t < s.end && Math.abs(s.index * PANEL - cam) < 1300) ambient(g, t, s); }
+    if (L.mode === 'portrait') for (const s of scenes) { if (t >= s.start && t < s.end && Math.abs(s.index * PANEL - cam) < L.width + 220) ambient(g, t, s); }
     g.restore();
+    if (L.mode === 'landscape') { g.save(); g.beginPath(); g.rect(0, 0, L.width, L.height); g.clip(); g.translate(-cam, 0); ambient(g, t, sc); g.restore(); }
     let pen = activeTip ? [activeTip[0] - cam, activeTip[1]] : null, opacity = 1;
     if (!pen) {   // 没有正在画的笔：短空档沿弧线滑过去；长空档手退出画外再进来
       const pens = strokes.filter(s => !s.fade), prev = pens.filter(s => s.at + s.dur <= t).at(-1), next = pens.find(s => s.at > t);
@@ -134,19 +144,19 @@ CLIPS.hand_drawn_marker = (() => {
       const start = next ? (next.kind === 'sprite' ? spriteEnds(next, true) : next.p ? next.p[0] : [next.x, next.y - next.size * .85]) : null;
       const gap = prev && next ? next.at - prev.at - prev.dur : Infinity;
       if (gap < .3) { const q = smooth(prev.at + prev.dur, next.at, t); pen = [U.lerp(end[0], start[0], q) - cam, U.lerp(end[1], start[1], q) - Math.sin(q * Math.PI) * 20]; }
-      else if (next && next.at - t < .3) { const q = smooth(next.at - .3, next.at, t); pen = [U.lerp(1280, start[0] - cam, q), U.lerp(Math.min(1350, start[1] + 160), start[1], q)]; opacity = q; }
+      else if (next && next.at - t < .3) { const q = smooth(next.at - .3, next.at, t); pen = [U.lerp(L.pen_enter_x, start[0] - cam, q), U.lerp(Math.min(L.pen_enter_bottom, start[1] + 160), start[1], q)]; opacity = q; }
       else if (prev && t - prev.at - prev.dur < .28) { const q = (t - prev.at - prev.dur) / .28; pen = [end[0] - cam + q * 360, end[1] + q * 100]; opacity = 1 - q; } }
-    if (pen && hand && pen[0] > -180 && pen[0] < 1080) {
-      g.save(); g.beginPath(); g.rect(0, 285, 1080, 1170); g.clip(); g.globalAlpha = opacity;
+    if (pen && hand && pen[0] > -180 && pen[0] < L.width) {
+      g.save(); g.beginPath(); g.rect(0, L.content_top, L.width, L.content_bottom - L.content_top); g.clip(); g.globalAlpha = opacity;
       g.translate(...pen); g.rotate(-Math.PI / 4); g.scale(.34, .34); g.translate(-tip[0], -tip[1]);
       const a = [1253, 885], b = [1052, 1253], far = 5000;           // 把袖口一直延长到画外，手臂不会在半空断掉
       g.fillStyle = BG; g.strokeStyle = INK; g.lineWidth = 3; g.beginPath(); g.moveTo(...a); g.lineTo(a[0] + far, a[1] + far); g.lineTo(b[0] + far, b[1] + far); g.lineTo(...b); g.closePath(); g.fill();
       g.beginPath(); g.moveTo(...a); g.lineTo(a[0] + far, a[1] + far); g.moveTo(...b); g.lineTo(b[0] + far, b[1] + far); g.stroke(); g.drawImage(hand, 0, 0); g.restore(); }
     g.fillStyle = INK; const H = ctx.data.header;
-    if (sc.index === 0) { g.font = '48px "LXGWWenKai-500"'; g.fillText(H.first[0], 85, 245); g.font = '43px "LXGWWenKai-500"'; g.fillText(H.first[1], 85, 308); }
-    else { g.font = '44px "LXGWWenKai-500"'; g.fillText(H.other, 85, 250); }
+    if (sc.index === 0) { g.font = '48px "LXGWWenKai-500"'; g.fillText(H.first[0], L.header_x, L.header_first_y[0]); g.font = '43px "LXGWWenKai-500"'; g.fillText(H.first[1], L.header_x, L.header_first_y[1]); }
+    else { g.font = '44px "LXGWWenKai-500"'; g.fillText(H.other, L.header_x, L.header_other_y); }
     caption(g, t, ctx);
-    const fade = U.clamp((t - (ctx.dur - .7)) / .6); if (fade > 0) { g.fillStyle = `rgba(255,255,255,${fade})`; g.fillRect(0, 0, 1080, 1920); }   // 结尾 0.6s 淡出到白板，不突然定格
+    const fade = U.clamp((t - (ctx.dur - .7)) / .6); if (fade > 0) { g.fillStyle = `rgba(255,255,255,${fade})`; g.fillRect(0, 0, L.width, L.height); }   // 结尾 0.6s 淡出到白板，不突然定格
   }
   return { inspect: () => strokes.filter(s => s.kind === 'sprite').map(s => ({ id: s.id, at: s.at, end: s.at + s.dur, index: s.index })), safe: true, fonts: ['LXGWWenKai-500', 'PuHui-Medium'], init, draw };
 })();

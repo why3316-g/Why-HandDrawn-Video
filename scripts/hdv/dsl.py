@@ -1,5 +1,5 @@
 """事件表 DSL：把"画板上的文字、线条道具、人物描绘"写成带绝对时间的事件，输出渲染配置 spec。
-画板坐标：宽 1080，可见区 y 285–1455，板内 x 从 0 起（渲染时再加 index*1120）。时间全部来自 Clock（配音词级时间戳）。
+画板坐标由项目 mode 选择；旧项目默认竖屏，宽屏使用独立布局而非缩放竖屏。时间全部来自 Clock（配音词级时间戳）。
 每个事件可带 tag（cross/check/pop/frame/ring），供版面自检识别语义；渲染器忽略 tag，混音不使用音效。"""
 import json, math, sys
 from pathlib import Path
@@ -12,8 +12,10 @@ PANEL = 1120
 
 class Film:
     def __init__(self, project, clock, lib_json='design/sprite-strokes-v01.json', hand='../assets/images/marker-hand-v02.png',
-                 hand_tip=(147, 119), header_first=('', ''), header_other='', tail=1.6, fps=30, grammar='hand_drawn_marker'):
+                 hand_tip=(147, 119), header_first=('', ''), header_other='', tail=1.6, fps=30, grammar='hand_drawn_marker', mode=None):
         self.P, self.clock = Path(project), clock
+        from .layout import get_layout, project_layout
+        self.layout = project_layout(self.P) if mode is None else get_layout(mode)
         self.lib = json.loads((self.P / lib_json).read_text(encoding='utf-8'))
         self.EV, self.PANELS = [], []
         self.hand, self.hand_tip = hand, list(hand_tip)
@@ -90,25 +92,43 @@ class Film:
             en = self.PANELS[k + 1][2] if k + 1 < len(self.PANELS) else self.clock.end + 1.4
             scenes.append({'index': i, 'id': pid, 'start': round(max(0, st), 3), 'end': round(en, 3)})
         dur = round((self.clock.end + self.tail) * self.fps) / self.fps
-        spec = {'grammar': self.grammar, 'duration': dur, 'fps': self.fps, 'width': 1080, 'height': 1920,
-                'data': {'image': self.hand, 'handTip': self.hand_tip, 'header': {'first': self.header_first, 'other': self.header_other},
+        spec = {'grammar': self.grammar, 'duration': dur, 'fps': self.fps, 'width': self.layout['width'], 'height': self.layout['height'],
+                'data': {'layout': self.layout, 'image': self.hand, 'handTip': self.hand_tip, 'header': {'first': self.header_first, 'other': self.header_other},
                          'scenes': scenes, 'events': self.EV, 'captions': captions, 'spriteLibrary': self.lib},
                 'cues': [{'at': 0, 'kind': 'asset', 'image': '../assets/images/' + v['file'], 'data': {'group': k}} for k, v in self.lib['source_images'].items()]}
         from .lint import lint, panel_rhythm_issues, panel_rhythm_report, panel_exit_issues
-        errs, warns = lint(self.EV)
+        errs, warns = lint(self.EV, layout=self.layout)
         errs.extend(panel_rhythm_issues(self.EV, scenes))
         errs.extend(panel_exit_issues(self.EV, scenes))
         # 越界与开头自检（2026-10-13 修复：人物图越出画板会泄漏到相邻画板；开头必须先画人）
         from .lint import text_w as _tw
+        left, top, right, bottom = self.layout['text_bounds']
+        if self.layout['mode'] == 'landscape':
+            if len(self.header_first) != 2:
+                errs.append('宽屏首板标题必须分为两行（header_first）')
+            else:
+                for k, (text, size) in enumerate(zip(self.header_first, (48, 43))):
+                    # 第二行与小钟同高，留出小钟所在的标题角落。
+                    limit = self.layout['opening_clock_mask'][0] if k == 1 else right
+                    if self.layout['header_x'] + _tw(text, size) > limit:
+                        errs.append(f'宽屏首板标题第{k + 1}行过长，请换行或使用锁定口播里的短语')
+            if self.layout['header_x'] + _tw(self.header_other, 44) > right:
+                errs.append('宽屏后续标题过长，请使用锁定口播里的简短主题')
+            for cap in captions:
+                size = self.layout['caption_small_size'] if len(cap['text']) > 17 else self.layout['caption_size']
+                if _tw(cap['text'], size) + 50 > self.layout['width'] - 2 * left:
+                    errs.append(f'宽屏字幕过长：「{cap["text"][:16]}」；请按语义拆分 breaks，不缩小为难读的小字')
         for e in self.EV:
             if e['kind'] == 'hero':
                 w = e['h'] * self.aspect[e['id']]; x0, x1 = e['cx'] - w / 2, e['cx'] + w / 2
-                if x0 < 40 or x1 > 1040:
-                    errs.append(f"板{e['index']} 人物 {e['id']} 水平范围 {x0:.0f}–{x1:.0f} 越出画板 40–1040，会泄漏到相邻画板；缩小 h 或移动 cx")
+                if x0 < left or x1 > right:
+                    errs.append(f"板{e['index']} 人物 {e['id']} 水平范围 {x0:.0f}–{x1:.0f} 越出画板 {left}–{right}，会泄漏到相邻画板；缩小 h 或移动 cx")
+                if e['top'] < self.layout['content_top'] or e['top'] + e['h'] > self.layout['content_bottom']:
+                    errs.append(f"板{e['index']} 人物 {e['id']} 纵向越出画板，会被裁切；调整 top 或 h")
             if e['kind'] == 'text':
                 x1 = e['x'] + _tw(e['str'], e['size'])
-                if x1 > 1040:
-                    errs.append(f"板{e['index']} 文字「{e['str'][:12]}」右边界 {x1:.0f} 超出 1040；缩小字号或换行")
+                if x1 > right:
+                    errs.append(f"板{e['index']} 文字「{e['str'][:12]}」右边界 {x1:.0f} 超出 {right}；缩小字号或换行")
         if self.PANELS:
             i0 = self.PANELS[0][0]
             heroes0 = [e['at'] for e in self.EV if e['kind'] == 'hero' and e['index'] == i0]

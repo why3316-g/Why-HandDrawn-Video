@@ -1,10 +1,10 @@
 # Why-HandDrawn-Video 视频工作区
 
-只加载 Why-HandDrawn-Video 一个 Skill；先读取其 SKILL.md、references/PIPELINE_SOP.md、references/OPENING_SPEC.md 及 references/workspace/ 下音频、人物规范。花叔引擎、封面 canvas-design 和人物检查器均已内嵌，不另外安装 Skill。固定风格不重新选择；改画风或超出已有能力按 ENGINE_GUIDE 提交改编申请。
+默认 portrait 竖屏；网站宽屏用 new_project.py --mode landscape，并读 references/LANDSCAPE_SPEC.md，按其主题封面、画幅与网站交付规则执行。只加载 Why-HandDrawn-Video 一个 Skill；先读取其 SKILL.md、references/PIPELINE_SOP.md、references/OPENING_SPEC.md 及 references/workspace/ 下音频、人物规范。花叔引擎、封面 canvas-design 和人物检查器均已内嵌，不另外安装 Skill。固定风格不重新选择；改画风或超出已有能力按 ENGINE_GUIDE 提交改编申请。
 
 目录：projects/YYYYMMDD-topic-vNN/ 每条视频独立；brief/ 锁定原稿及定位，design/ 表演表和事件表，assets/ 可追溯音图，engine/ 项目引擎副本，renders/ 版本化成片，qc/ 验收证据。outputs/ 为可重建分析产物。assets/audio-library/ 可放本账号已授权音乐与 LICENSES.md。密钥只存工作区 .private/volcengine.env 与 .private/ark.env；禁止进 Git、打包或日志。
 
-标题正文逐字保留。配音（火山或免费微软）全文提交一次，不拆句拼接、不自动重复付费；用户试听锁定。人物按原文逐图审核，同图最多两次；有自己的人物参考图扩展包时按其说明使用。人物和封面一起交用户审核。封面先读取包内 COVER_ART_DIRECTION 写视觉理念，代码排字、获准生图工具画插画。生图按当前工具分流（Codex/WorkBuddy 内置；Claude 用 Codex CLI 或火山方舟），不静默换渠道。
+已锁定的标题与口播逐字保留。原文章属于资料输入：先留存 brief/source/，提交口语化改编稿，用户确认后才锁定 narration.txt；不得把源文章直接当成已锁口播。配音（火山或免费微软）全文提交一次，不拆句拼接、不自动重复付费；用户试听锁定。人物按原文逐图审核，同图最多两次；有自己的人物参考图扩展包时按其说明使用。人物和封面一起交用户审核。封面先读取包内 COVER_ART_DIRECTION 写视觉理念，代码排字、获准生图工具画插画。生图按当前工具分流（Codex/WorkBuddy 内置；Claude 用 Codex CLI 或火山方舟），不静默换渠道。
 
 用户提供的稿件视为已确认的事实输入，不另审真实性、不索要证明或提示事实待核实。预检只报告制作环境与配置；已验证/未验证项仅指制作与验收。不得增编情节、效果或证据。
 

@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from PIL import Image, ImageDraw, ImageFont, ImageChops
 import gen_sprites as G
 from common import SKILL
+from hdv.layout import get_layout, project_layout
 
 W, H = 1080, 1920
 INK, OR = (23, 23, 23), (237, 121, 41)
@@ -33,24 +34,31 @@ def load_font(size):
     raise SystemExit('包内中文字体缺失，请重新解压完整 Skill 包')
 
 
-def render_text(cfg, title):
+def render_text(cfg, title, mode='portrait'):
+    layout = get_layout(mode)
+    W, H = layout['width'], layout['height']
+    wide = mode == 'landscape'
     flat = ''.join(seg[0] for line in cfg['lines'] for seg in line)
     if flat != title:
         raise SystemExit(f'封面标题与 brief/title.txt 不一致：\n  封面 {flat}\n  原稿 {title}')
     im = Image.new('RGB', (W, H), 'white'); d = ImageDraw.Draw(im)
-    base = cfg.get('size', 108); gap = cfg.get('line_gap', 1.3)
-    y = cfg.get('title_top', 290); used = None
+    base = cfg.get('size', 76 if wide else 108); gap = cfg.get('line_gap', 1.3)
+    y = cfg.get('title_top', 200 if wide else 290); used = None
+    left, right = (80, 1000) if wide else (cfg.get('margin', 48), W - cfg.get('margin', 48))
     for line in cfg['lines']:
         parts = []
         for seg in line:
             ft, used = load_font(seg[2] if len(seg) > 2 else base)
             parts.append((seg[0], seg[1], ft))
         wid = sum(d.textlength(t, font=f) for t, _, f in parts)
-        if wid > W - 2 * cfg.get('margin', 48):
+        if wid > right - left:
             raise SystemExit(f'封面这一行太宽（{wid:.0f}px）：{"".join(p[0] for p in parts)}，请减小字号或换行')
-        x = (W - wid) / 2
+        x = left if wide else (W - wid) / 2
         hmax = max(f.size for _, _, f in parts)
         for t, o, f in parts:
+            bounds = d.textbbox((x, y + hmax - f.size), t, font=f)
+            if bounds[1] < 0 or bounds[3] > H - (80 if wide else 200):
+                raise SystemExit('封面标题上下出界，请减小字号或重新分行')
             d.text((x, y + hmax - f.size), t, font=f, fill=OR if o else INK)
             x += d.textlength(t, font=f)
         y += int(hmax * gap)
@@ -69,13 +77,24 @@ def main():
     ap.add_argument('--emit-image-prompt', action='store_true'); ap.add_argument('--imagegen-tool', default=''); ap.add_argument('--imagegen-version', default='')
     a = ap.parse_args()
     P = Path(a.project).resolve(); ver = a.version
+    layout = project_layout(P)
+    W, H = layout['width'], layout['height']
+    wide = layout['mode'] == 'landscape'
     cfg = json.loads((P / 'design/cover.json').read_text(encoding='utf-8'))
     title = (P / 'brief/title.txt').read_text(encoding='utf-8').strip()
     name = cfg.get('name') or P.name.split('-', 1)[1].rsplit('-v', 1)[0]
     (P / 'renders').mkdir(exist_ok=True)
-    text_im, text_end, font_used = render_text(cfg, title)
+    text_im, text_end, font_used = render_text(cfg, title, mode=layout['mode'])
     tpath = P / f'renders/{name}-cover-text-{ver}.png'
-    text_im.save(tpath)
+    out = P / f'renders/{name}-cover-{ver}.png'
+    if out.exists():
+        raise SystemExit('该版封面已存在，请使用新的 --version，不覆盖旧产物')
+    if tpath.exists():
+        previous = Image.open(tpath).convert('RGB')
+        if previous.size != text_im.size or ImageChops.difference(previous, text_im).getbbox():
+            raise SystemExit('该版文字底稿已变化，请使用新的 --version，不覆盖旧产物')
+    else:
+        text_im.save(tpath)
     print('文字底稿 →', tpath.relative_to(P), '| 标题块底边 y =', text_end)
     if a.text_only:
         return
@@ -113,19 +132,25 @@ def main():
     # ---- 合成 ----
     il = whiten(Image.open(illus))
     bbox = ImageChops.invert(il.convert('L')).point(lambda v: 255 if v > 12 else 0).getbbox()
+    if not bbox:
+        raise SystemExit('封面插画是空白图，不能合成')
     il = il.crop(bbox)
-    iw = cfg.get('illus_width', 760)
+    iw = cfg.get('illus_width', 650 if wide else 760)
     il = il.resize((iw, int(il.height * iw / il.width)), Image.LANCZOS)
-    cy = cfg.get('illus_center_y', 1260)
-    x, y = (W - il.width) // 2, int(cy - il.height / 2)
-    if y < text_end + cfg.get('min_gap', 90):
+    cy = cfg.get('illus_center_y', 570 if wide else 1260)
+    cx = cfg.get('illus_center_x', 1440 if wide else W / 2)
+    x, y = int(cx - il.width / 2), int(cy - il.height / 2)
+    if wide and x < 1060:
+        raise SystemExit('宽屏插画进入左侧标题区，请减小 illus_width 或右移 illus_center_x')
+    if x < 0 or x + il.width > W or y < (80 if wide else 0):
+        raise SystemExit('封面插画超出画布安全区，请调整位置或大小')
+    if not wide and y < text_end + cfg.get('min_gap', 90):
         raise SystemExit(f'插画顶 y={y} 离标题底边 {text_end} 太近，请调 illus_center_y 或 illus_width')
-    if y + il.height > H - 200:
+    if y + il.height > H - (80 if wide else 200):
         raise SystemExit(f'插画底 y={y + il.height} 太靠下（需留出底部界面区）')
     canvas = text_im.copy()
     region = canvas.crop((x, y, x + il.width, y + il.height))
     canvas.paste(ImageChops.darker(region, il), (x, y))
-    out = P / f'renders/{name}-cover-{ver}.png'
     canvas.save(out)
     sha = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
     ver_codex = ''
@@ -141,8 +166,8 @@ def main():
     prompt_file = P / f'design/prompts/cover-illus-{ver}.txt'
     prompt_sha256 = hashlib.sha256(prompt_file.read_bytes()).hexdigest() if prompt_file.is_file() else None
     imagegen_method = 'Codex CLI 调用' if rec else ('Codex 内置生图工具' if a.imagegen_tool else '复用已有插画')
-    record = {'time': time.strftime('%Y-%m-%d %H:%M'), 'version': ver, 'title': title, 'size': [W, H], 'font': font_used,
-              'lines': cfg['lines'], 'illus_width': iw, 'illus_center_y': cy, 'illus_file': illus_rel, 'illus_sha256': sha(illus),
+    record = {'time': time.strftime('%Y-%m-%d %H:%M'), 'version': ver, 'title': title, 'mode': layout['mode'], 'size': [W, H], 'font': font_used,
+              'lines': cfg['lines'], 'illus_width': iw, 'illus_center_x': cx, 'illus_center_y': cy, 'illus_file': illus_rel, 'illus_sha256': sha(illus),
               'cover_sha256': sha(out), 'codex': ver_codex, 'imagegen_tool': imagegen_tool,
               'imagegen_version': imagegen_version, 'imagegen_method': imagegen_method, 'imagegen_prompt': str(prompt_file.relative_to(P)) if prompt_file.is_file() else None, 'imagegen_prompt_sha256': prompt_sha256, 'imagegen': rec or '复用已有插画', 'philosophy': f'design/cover-philosophy-{ver}.md',
               'canvas_design': {'source': 'https://github.com/anthropics/skills/blob/b9e19e6f44773509fbdd7001d77ff41a49a486c1/skills/canvas-design/SKILL.md', 'bundled_path': 'references/COVER_ART_DIRECTION.md', 'guidance_sha256': sha(SKILL / 'references/COVER_ART_DIRECTION.md'), 'commit': 'b9e19e6f44773509fbdd7001d77ff41a49a486c1', 'read_on': time.strftime('%Y-%m-%d')}}

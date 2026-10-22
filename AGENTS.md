@@ -9,3 +9,7 @@
 - 先改规则再改实现；本文件与 CLAUDE.md 必须逐字节一致。标题原文、声音锁定、人物和封面审核、最终确认及独立审片规则按 SKILL.md 执行。
 - 修改后：`python scripts/verify_bundle.py --write` 重建清单，再 `python -m unittest discover -s tests -v`；运行链有改动再跑 `python scripts/smoke_test.py --out <仓库外全新目录>`。更新上游文件须按 upstream/SOURCES.json 登记来源与改动依据。
 - 本仓库为公开版：清单 profile 为 public；不含品牌素材、人物参考图和配乐。提交前确认没有个人信息、密钥、本机绝对路径。
+
+## 双模式维护
+- portrait 是旧项目默认模式；landscape 是1920×1080网站手绘讲解，唯一区别规范见 references/LANDSCAPE_SPEC.md。原文章先改编并锁口播，用户素材不进入公开包。
+- 模式运行链变化必须分别跑 `smoke_test.py --mode portrait --out <新目录>` 与 `--mode landscape --out <另一新目录>`，两种模式都通过才能发布。

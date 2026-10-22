@@ -1,5 +1,7 @@
 # 制作流程（13 步）
 
+模式先行：默认 portrait；网站宽屏用 new_project.py --mode landscape，先读 LANDSCAPE_SPEC.md。原文章先留存并改编为待审讲解稿，用户确认后才进入下表第2–3步；宽屏坐标、主题封面和网站交付按该规范覆盖本页竖屏案例专属说明，审核闸门共用。
+
 每步写明产物与闸门。第 0–1 步在工作区根目录运行；第 2 步起先 `cd projects/日期-短名-v01`，脚本默认处理当前目录（也可用 `--project` 指定）。`<skill>` = 本 Skill 目录。
 
 | # | 步骤 | 做什么 | 产物 | 闸门 |
@@ -17,7 +19,7 @@
 | 10 | 音画对齐 | `python <skill>/scripts/sync_report.py` | qc/sync-report.md | "需检查"项逐条看 |
 | 11 | 配乐 + 开头封面 | ①**直接用第 9 步独立审片通过的那一版 `renders/<名>-visual-vNN.mp4`，不再重渲画面**；②当前执行本工作流的 AI 工具按脚本自动选定已授权曲目，告知用户曲目与依据后继续，不等待挑选或审核；③`mix_audio.py --video … --out renders/<名>-bgm-v01.mp4 --bgm <曲目>`（响度查 `bgm-levels.json`，没有登记值时自动用 `-28 LUFS` 并记录；不用音效）；④**必须**用 `add_cover_intro.py` 把第 5 步用户已通过的封面图拼入最终视频开头 6 帧（≈0.2 s），输出 `renders/<名>-final-v01.mp4`。单独 PNG、试听版或平台端上传封面都不能替代成片内的封面帧 | renders/、qc/mix-report-*.json | 成片帧数 = 混音正片帧数 + 6；时长增加 0.2 s；第 0 帧须与已通过封面一致，第 6 帧开始正片，前 6 帧静音；混音响度 -16 LUFS；配乐过授权闸门。封面帧核验不通过不得交付；拼入封面后对 final 再跑 `opening_check.py --video <final>`（含封面 0.2 s 静止），必须通过 |
 | 12 | 验收 | `python <skill>/scripts/qa_project.py`；ffprobe；成片再跑 `panel_check.py --offset 0.2` 和 `check_voice.py`；抽查第 0 帧与已通过封面、第 6 帧与混音正片首帧，并确认前 6 帧静音；关键帧目检；**独立 agent 成片复核**（提示词见 PROMPT_PACK D2：只核对第 9 步之后新增的封装——封面帧、静音片头、配乐压低与口播清晰度、成片开头检测、结尾渐隐；画面已在第 9 步审过，不重审） | qc/ | 复核发现的问题逐条处理；画面问题若在第 9 步审过的 visual 版里已存在且未判阻断，记录不返工；封面、帧数、静音片头任何一项不符都不得交付；**开头规范三项都要有记录**：事件表自检通过、`opening_check.py` 对成片通过（`qc/opening-check.md`）、开头抽帧目检（0.9/1.9/2.7/3.6/4.4/5.2 s）；任一项缺失不得交付。`qa_project.py` 会自动对最新 final 跑开头检测 |
-| 13 | 交付 | 写 `STATUS.md`（成片路径、版本、已验证项、未验证项）；本地 git 提交文档变更 | STATUS.md | 用户最终确认 |
+| 13 | 交付 | landscape 先运行 `export_website.py --video <final> --cover <封面> --out renders/website-vNN` 生成网站MP4、poster、VTT；写 `STATUS.md`（成片路径、版本、已验证项、未验证项）；本地 git 提交文档变更 | STATUS.md | 用户最终确认 |
 
 ## 开头规范（贯穿第 4、7、9、11、12 步）
 唯一权威：`references/OPENING_SPEC.md`。三条硬指标：人物 0.5 s 内起笔；0–5 s 内除字幕外持续有新笔画、静止 ≤ 1.0 s；字幕/标题栏/小时钟/镜头平移不算动画。查法：事件表自检 + `opening_check.py` 检测成片 + 目检。

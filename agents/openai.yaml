@@ -1,6 +1,6 @@
 interface:
   display_name: "Why-HandDrawn-Video"
-  short_description: "白纸线稿 + 马克笔手绘动画的视频号竖屏案例故事视频，固定风格"
+  short_description: "白纸线稿与马克笔逐笔手绘，支持视频号竖屏案例和网站宽屏讲解"
   default_prompt: "用 $why-handdrawn-video 制作下面的视频。"
 policy:
   allow_implicit_invocation: true

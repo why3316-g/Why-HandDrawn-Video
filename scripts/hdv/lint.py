@@ -33,7 +33,10 @@ def _pts(e, step=6):
     return out
 
 
-def lint(events, panels=None):
+def lint(events, panels=None, layout=None):
+    from .layout import get_layout
+    layout = layout or get_layout()
+    left, top, right, bottom = layout['text_bounds']
     errs, warns = [], []
     by = {}
     for e in events: by.setdefault(e['index'], []).append(e)
@@ -42,7 +45,7 @@ def lint(events, panels=None):
         lines = [e for e in evs if e['kind'] == 'line']
         tb = [(t, tbox(t)) for t in texts]
         for t, b in tb:
-            if b[0] < 40 or b[2] > 1040 or b[1] < 285 or b[3] > 1425:
+            if b[0] < left or b[2] > right or b[1] < top or b[3] > bottom:
                 errs.append(f'板{i} 文字出界/压字幕带：「{t["str"]}」包围盒 x{b[0]:.0f}-{b[2]:.0f} y{b[1]:.0f}-{b[3]:.0f}')
         for a in range(len(tb)):
             for c in range(a + 1, len(tb)):
@@ -56,6 +59,8 @@ def lint(events, panels=None):
             tag = ln.get('tag') or ''
             xs = [p[0] for p in ln['p']]; ys = [p[1] for p in ln['p']]
             lb = (min(xs), min(ys), max(xs), max(ys))
+            if layout['mode'] == 'landscape' and (lb[0] < left or lb[2] > right or lb[1] < layout['content_top'] or lb[3] > layout['content_bottom']):
+                errs.append(f'板{i} 线条越出宽屏画板，会被裁切')
             if tag.startswith('ring:'):
                 s = tag[5:]
                 tgt = [b for t, b in tb if t['str'] == s]

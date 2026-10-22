@@ -1,5 +1,7 @@
 # AI一键生成手绘视频（Why-HandDrawn-Video）
 
+支持默认竖屏 portrait（1080×1920）和网站宽屏 landscape（1920×1080）。对 AI 说“把这篇文章做成网站宽屏手绘讲解视频”；入口会读取 references/LANDSCAPE_SPEC.md，先改编并确认口播。新建命令加 `--mode landscape`；原有竖屏命令不变。宽屏验收用 `smoke_test.py --mode landscape --out <新目录>`，网站交付用 `export_website.py`。
+
 给 AI（Claude Code / Codex / WorkBuddy）一个标题和一份口播稿，它帮你做出一条**白纸线稿 + 马克笔手绘 + 暗色字幕条**的竖屏（1080×1920）视频：配音、画人物、手绘动画、字幕、封面、混音、质检，一条龙。
 
 > 画风固定、流程固定，所以出片稳定。适合讲故事、讲案例、讲观点的口播类短视频（视频号 / 抖音 / 小红书）。

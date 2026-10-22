@@ -18,7 +18,8 @@ ap.add_argument('--project', default='.'); ap.add_argument('--video', required=T
 ap.add_argument('--spec', default='design/spec-film.json'); ap.add_argument('--out', default='qc/panel-final')
 a = ap.parse_args()
 P = Path(a.project).resolve()
-spec = json.loads((P / a.spec).read_text(encoding='utf-8'))['data']
+film_spec = json.loads((P / a.spec).read_text(encoding='utf-8'))
+spec = film_spec['data']
 out = P / a.out; out.mkdir(parents=True, exist_ok=True)
 video = a.video if Path(a.video).is_absolute() else str(P / a.video)
 scenes, events = spec['scenes'], spec['events']
@@ -40,7 +41,7 @@ for t in times:
 (out / 'panel-final-times.json').write_text(json.dumps(times, ensure_ascii=False, indent=1), encoding='utf-8')
 try: font = ImageFont.truetype(str(SKILL / 'assets/fonts/NotoSansSC-VF.ttf'), 26)
 except Exception: font = None
-W, H = 405, 720
+W, H = (720, 405) if film_spec['width'] > film_spec['height'] else (405, 720)
 for n in range(0, len(files), 8):
     chunk = files[n:n + 8]
     sh = Image.new('RGB', (W * 4, H * 2), 'white'); d = ImageDraw.Draw(sh)
