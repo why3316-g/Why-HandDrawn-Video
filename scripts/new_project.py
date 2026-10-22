@@ -16,6 +16,7 @@ ap = argparse.ArgumentParser()
 ap.add_argument('name')
 ap.add_argument('--workspace', default=None)
 ap.add_argument('--mode', choices=('portrait', 'landscape'), default='portrait', help='portrait 竖屏（默认）；landscape 网站宽屏')
+ap.add_argument('--content-type',choices=('general','institutional_promo'),default='general')
 ap.add_argument('--date', default=datetime.date.today().strftime('%Y%m%d'))
 a = ap.parse_args()
 layout = get_layout(a.mode)
@@ -67,6 +68,10 @@ for f in ('BRIEF.md', 'narration.txt', 'title.txt'):
 config_path = P / 'design/config.json'
 config = json.loads(config_path.read_text(encoding='utf-8'))
 config['mode'] = a.mode
+config['content_type'] = a.content_type
+if a.content_type == 'institutional_promo':
+    config['voice'] = 'yichen'
+    config['cover_style'] = 'institutional'
 if a.mode == 'landscape':
     config['header_first'] = ['本片主题（锁稿后填写）', '本节要点（取自口播）']
     config['header_other'] = '本片主题'

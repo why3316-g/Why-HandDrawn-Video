@@ -102,3 +102,7 @@ python -m unittest discover -s tests       # 回归测试（不调用任何付�
 python scripts/smoke_test.py --out <空目录> # 真实渲染一条离线测试视频
 ```
 来源与许可见 `THIRD_PARTY_NOTICES.md` 和 `upstream/SOURCES.json`。
+
+## G端机构宣传片
+
+学校、教育局、企业等官网宣传片用content_type=institutional_promo；默认儒雅逸辰2.0（yichen）、语速0与正式播音指令，封面用正式机构宣传片风格，正文仍手绘。唯一细则见references/INSTITUTIONAL_PROMO.md；本节覆盖其他段落旧默认，仅限机构宣传片。用户明确要求原文直接做视频时不得强制改写；明确要求先看静态图可先出美术预览，不伪造全文锁音、不进入动画渲染。

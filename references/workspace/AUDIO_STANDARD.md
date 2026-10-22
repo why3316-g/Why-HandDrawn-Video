@@ -42,3 +42,7 @@
 - 输出 assets/audio/narration-volcengine-<dayi|xiaohe|jitang>-full-vNN.mp3、相邻回执和 WAV 母带；config.json 绑定音频与词级时间戳，Clock 检查正文一致。拒绝的候选保留并标 rejected，不进入成片；批准记 approved。
 - 元数据保留正文/音频 SHA-256、接口/音色/参数、task ID、时间戳、时长/解码、复用状态和人工确认。签名下载 URL 仅内存使用，不能进交付回执。
 - 交付前再跑 check_voice.py，完成解码、时长、全文与逐句独立转录、人耳及音画核验；只做电平或 --no-asr 检查不能称内容验收通过。结果与复核记录放 qc/，接续以本项目 BRIEF/STATUS 为准，不从别片推断已批准声音。
+
+## G端宣传片默认声音（2026-10-22用户定稿）
+
+G端学校、教育局、企业等机构官网宣传片，content_type=institutional_promo，默认儒雅逸辰2.0，voice=yichen，voice_type=zh_male_ruyayichen_uranus_bigtts，seed-tts-2.0，speech_rate=0。正式播音指令与执行方法统一见Skill references/INSTITUTIONAL_PROMO.md。用户已从真实短试听选定音色；新全文仍按一次提交、独立核验与试听锁定。其他内容原有声音规则不变。明确要求先看静态图可记录授权后出静态预览，不冒充全文音轨已锁定。

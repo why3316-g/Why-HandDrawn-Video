@@ -10,6 +10,7 @@ from pathlib import Path
 
 SKILL=Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(SKILL/'scripts'))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import find_workspace
 
 def workspace_for(project):
@@ -27,6 +28,10 @@ VOICES = {'dayi': 'zh_male_dayi_uranus_bigtts', 'xiaohe': 'zh_female_xiaohe_uran
 # 2026-10-21 用户指定：鸡汤女 2.0 听起来偏慢，后台测试值为 14（≈1.14 倍），工作流默认按 14 提交；
 # 大壹与小何 2.0 仍为 10（≈1.1 倍）。命令行 --speech-rate 只在用户明确要求时覆盖，且必须写进回执。
 SPEECH_RATE = {'dayi': 10, 'xiaohe': 10, 'jitang': 14}
+from institutional_profile import PROFILE as INSTITUTIONAL, select_voice, broadcast_tts_class
+VOICES['yichen'] = INSTITUTIONAL['voice_id']
+SPEECH_RATE['yichen'] = INSTITUTIONAL['speech_rate']
+
 
 
 def speed_multiplier(rate):
@@ -163,9 +168,10 @@ def ensure_wav(path):
         raise ValueError('Invalid alignment WAV format.')
     return {'path':str(wav),'sha256':sha_bytes(wav.read_bytes()),'duration_seconds':duration,'sample_rate':44100,'channels':1}
 
-def run(project,version='v01',preflight=False,voice='dayi',confirm_voice_change=False,provider='auto',speech_rate=None,join_lines=False):
+def run(project,version='v01',preflight=False,voice=None,confirm_voice_change=False,provider='auto',speech_rate=None,join_lines=False):
     project=Path(project).resolve()
     workspace=workspace_for(project)
+    voice=select_voice(project,voice)
     if voice not in VOICES: raise ValueError('Unknown voice; use dayi, xiaohe or jitang.')
     voice_id=VOICES[voice]
     if not re.fullmatch(r'v\d{2,}',version): raise ValueError('Invalid version.')
@@ -183,6 +189,8 @@ def run(project,version='v01',preflight=False,voice='dayi',confirm_voice_change=
         text_transform='paragraphs_joined'
     tts_hash=sha_bytes(tts_text.encode('utf-8'))
     provider=resolve_provider(workspace,provider)
+    if voice=='yichen' and provider!='volcengine':
+        raise ValueError('机构宣传片的儒雅逸辰只使用火山通道，请配置火山或指定 --provider volcengine。')
     if provider=='edge':
         return run_edge(project,workspace,text,text_hash,version,preflight,voice,confirm_voice_change)
     profile=json.loads((SKILL/'upstream/openmontage-audio/voice-profile.json').read_text(encoding='utf-8'))
@@ -193,7 +201,8 @@ def run(project,version='v01',preflight=False,voice='dayi',confirm_voice_change=
              'utf16_units':utf16_length(text),'full_body':True,'single_submission':True,
              'speech_rate':rate,'speed_multiplier':speed_multiplier(rate),'speech_rate_source':rate_source,
              'text_transform':text_transform,'tts_text_sha256':tts_hash,
-             'output':str(target),'segmentation_allowed':False}
+             'output':str(target),'segmentation_allowed':False,
+             'institutional_directive':INSTITUTIONAL['directive'] if voice=='yichen' else None}
     if preflight:
         values=load_private(workspace)
         check_private_voice(values)
@@ -222,7 +231,8 @@ def run(project,version='v01',preflight=False,voice='dayi',confirm_voice_change=
     sys.path.insert(0,str(SKILL/'upstream/openmontage-audio'))
     from tools.audio.doubao_tts import DoubaoTTS
     print('Submitting one full-body Volcengine task.',flush=True)
-    result=DoubaoTTS().execute({'text':tts_text,'voice_id':voice_id,
+    tts_class=broadcast_tts_class() if voice=='yichen' else DoubaoTTS
+    result=tts_class().execute({'text':tts_text,'voice_id':voice_id,
         'resource_id':profile['resource_id'],'speech_rate':profile['speech_rate'],
         'format':'mp3','sample_rate':profile['sample_rate'],'enable_timestamp':True,
         'voice_validation':profile['voice_validation'],'output_path':str(target),
@@ -241,6 +251,7 @@ def run(project,version='v01',preflight=False,voice='dayi',confirm_voice_change=
     provider_receipt=json.loads(receipt.read_text(encoding='utf-8'))
     metadata={'provider':'volcengine_doubao','input_text_sha256':text_hash,
         'voice_id':voice_id,'resource_id':profile['resource_id'],
+        'institutional_directive':INSTITUTIONAL['directive'] if voice=='yichen' else None,
         'speech_rate':profile['speech_rate'],'speed_multiplier':speed_multiplier(profile['speech_rate']),
         'speech_rate_source':rate_source,
         'text_transform':text_transform,'tts_text_sha256':tts_hash,
@@ -263,7 +274,7 @@ if __name__=='__main__':
     parser.add_argument('--project',required=True)
     parser.add_argument('--version',default='v01')
     parser.add_argument('--provider',default='auto',choices=('auto','volcengine','edge'),help='auto=配了火山密钥用火山、没配用免费微软语音；也可在工作区 .hdv-workspace.json 写 tts_provider 固定')
-    parser.add_argument('--voice',default='dayi',choices=sorted(VOICES),help='dayi=大壹（默认）；xiaohe=小何 2.0，仅学生第一人称且为女生或性别不明的稿子；jitang=鸡汤女 2.0，仅家长角度且家长是妈妈的稿子（家长是爸爸用 dayi）')
+    parser.add_argument('--voice',default=None,choices=sorted(VOICES),help='dayi=大壹（默认）；xiaohe=小何 2.0，仅学生第一人称且为女生或性别不明的稿子；jitang=鸡汤女 2.0，仅家长角度且家长是妈妈的稿子（家长是爸爸用 dayi）')
     parser.add_argument('--confirm-voice-change',action='store_true',help='同一全文已用另一音色合成过，用户明确同意换声再合成时才加')
     parser.add_argument('--speech-rate',type=int,default=None,help='火山 audio_params.speech_rate，[-50,100]，100=2.0 倍速。不填则按音色默认：大壹/小何 10、鸡汤女 14。只在用户明确要求改语速时使用，值会写进回执')
     parser.add_argument('--join-lines',action='store_true',help='只去掉 brief/narration.txt 的段间换行（逐字不变，脚本会校验），用于消除段末换行造成的额外停顿；口播原文不改')

@@ -5,7 +5,7 @@ protagonist_cast（cast.json 里主角的 key）。cast.json 里主角必须写 
 第三人称、家长或陪伴师口吻（narrator_is_protagonist 为 false）不受此约束。性别无法从稿子判断时按声音规则默认小何（女声），主角就画女生。"""
 import re
 
-VOICE_GENDER = {'dayi': 'male', 'xiaohe': 'female', 'jitang': 'female'}
+VOICE_GENDER = {'yichen': 'male', 'dayi': 'male', 'xiaohe': 'female', 'jitang': 'female'}
 _FEMALE_WORDS = re.compile(r'\b(girl|woman|female|she|her|daughter)\b', re.I)
 _MALE_WORDS = re.compile(r'\b(boy|man|male|he|his|son)\b', re.I)
 

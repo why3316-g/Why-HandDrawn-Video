@@ -80,6 +80,11 @@ def main():
     layout = project_layout(P)
     W, H = layout['width'], layout['height']
     wide = layout['mode'] == 'landscape'
+    project_cfg=json.loads((P/'design/config.json').read_text(encoding='utf-8'))
+    if project_cfg.get('content_type')=='institutional_promo':
+        from make_institutional_cover import main as formal_cover
+        formal_cover(['--project',str(P),'--version',ver]+(['--text-only'] if a.text_only else []))
+        return
     cfg = json.loads((P / 'design/cover.json').read_text(encoding='utf-8'))
     title = (P / 'brief/title.txt').read_text(encoding='utf-8').strip()
     name = cfg.get('name') or P.name.split('-', 1)[1].rsplit('-v', 1)[0]

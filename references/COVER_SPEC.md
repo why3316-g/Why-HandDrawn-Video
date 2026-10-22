@@ -43,3 +43,7 @@
 - 用 `python <skill>/scripts/add_cover_intro.py --video <配乐版> --cover <封面> --out <成片>`；开头段静音，口播与画面整体后移 0.2 s，音画相对关系不变；脚本核对总帧数 = 正片帧数 + 6。
 - 开头规范关系（`OPENING_SPEC.md`）：封面 0.2 s 是静止帧，计入"第一段静止"；因此第一块画板人物须在正片 0.5 s 内起笔，拼入封面后再对 final 跑 `opening_check.py`。
 - 验收：用 ffmpeg 抽 0 s 帧与封面图比对（差异只应是压缩噪声），0.2 s 之后应是正片第一帧。
+
+## G端机构宣传片（2026-10-22用户定稿）
+
+学校、教育局、企业等官网宣传片设`content_type: institutional_promo`：默认儒雅逸辰2.0（`yichen`，`zh_male_ruyayichen_uranus_bigtts`），语速0和同一正式播音指令；封面为正式机构宣传片主视觉，正文保持原手绘。唯一细则见`references/INSTITUTIONAL_PROMO.md`，本节覆盖其他文件中的大壹默认及白板封面要求，仅限此内容类型。用户明确要求原文直接转视频时保留原文，不强制改写。用户明确要求先看静态效果时可先出封面与若干图，记录授权范围，不伪造全文声音锁定、不进入动画渲染。

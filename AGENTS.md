@@ -13,3 +13,7 @@
 ## 双模式维护
 - portrait 是旧项目默认模式；landscape 是1920×1080网站手绘讲解，唯一区别规范见 references/LANDSCAPE_SPEC.md。原文章先改编并锁口播，用户素材不进入公开包。
 - 模式运行链变化必须分别跑 `smoke_test.py --mode portrait --out <新目录>` 与 `--mode landscape --out <另一新目录>`，两种模式都通过才能发布。
+
+## G端机构宣传片
+
+学校、教育局、企业等官网宣传片用content_type=institutional_promo；默认儒雅逸辰2.0（yichen）、语速0与正式播音指令，封面用正式机构宣传片风格，正文仍手绘。唯一细则见references/INSTITUTIONAL_PROMO.md；本节覆盖其他段落旧默认，仅限机构宣传片。用户明确要求原文直接做视频时不得强制改写；明确要求先看静态图可先出美术预览，不伪造全文锁音、不进入动画渲染。
