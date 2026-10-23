@@ -66,6 +66,8 @@ class LandscapeCoreTests(unittest.TestCase):
             sp = f.build([])
             self.assertEqual((sp['width'], sp['height']), (1920, 1080))
             self.assertEqual(sp['data']['layout']['mode'], 'landscape')
+            self.assertEqual(f.hand, '../assets/images/marker-hand-landscape-v01.png')
+            self.assertEqual(Film(p, SimpleNamespace(end=4.0),mode='portrait').hand, '../assets/images/marker-hand-v02.png')
             f.EV[0]['top'] = 600
             with self.assertRaises(SystemExit):
                 f.build([])

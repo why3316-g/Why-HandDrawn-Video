@@ -11,14 +11,15 @@ PANEL = 1120
 
 
 class Film:
-    def __init__(self, project, clock, lib_json='design/sprite-strokes-v01.json', hand='../assets/images/marker-hand-v02.png',
+    def __init__(self, project, clock, lib_json='design/sprite-strokes-v01.json', hand=None,
                  hand_tip=(147, 119), header_first=('', ''), header_other='', tail=1.6, fps=30, grammar='hand_drawn_marker', mode=None):
         self.P, self.clock = Path(project), clock
         from .layout import get_layout, project_layout
         self.layout = project_layout(self.P) if mode is None else get_layout(mode)
         self.lib = json.loads((self.P / lib_json).read_text(encoding='utf-8'))
         self.EV, self.PANELS = [], []
-        self.hand, self.hand_tip = hand, list(hand_tip)
+        self.hand = hand or ('../assets/images/marker-hand-landscape-v01.png' if self.layout['mode'] == 'landscape' else '../assets/images/marker-hand-v02.png')
+        self.hand_tip = list(hand_tip)
         self.header_first, self.header_other = list(header_first), header_other
         self.tail, self.fps, self.grammar = tail, fps, grammar
         self.aspect = {k: v['rect'][2] / v['rect'][3] for k, v in self.lib['sprites'].items()}

@@ -87,7 +87,7 @@ if a.mode == 'landscape':
     brief += '- 文章转讲解：原文保存在 brief/；口播候选及原文对应表经用户确认后才锁定 narration.txt。版式与网站交付见 Skill references/LANDSCAPE_SPEC.md。\n'
 brief_path.write_text(brief, encoding='utf-8')
 shutil.copy(SKILL / 'template/STATUS.md', P / 'STATUS.md')
-for f in ('marker-hand-v02.png', 'marker-hand-meta-v02.json', 'style-ref-C.png'):
+for f in ('marker-hand-v02.png', 'marker-hand-meta-v02.json', 'marker-hand-landscape-v01.png', 'style-ref-C.png'):
     shutil.copy(SKILL / 'assets' / f, P / 'assets/images' / f)
 wardrobe_dir = copy_wardrobe_assets(SKILL, P)
 if wardrobe_dir:

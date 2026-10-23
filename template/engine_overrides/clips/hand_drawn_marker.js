@@ -17,7 +17,7 @@ CLIPS.hand_drawn_marker = (() => {
     // 素材袖管自身沿45°右下。只在宽屏修正：不再旋成水平，也不按画宽放大。
     const angle = Math.max(Math.PI / 4, Math.min(Math.PI * 65 / 180,
       Math.atan2(layout.content_bottom + 180 - pen[1], layout.width + 100 - pen[0])));
-    return { rotation: angle - Math.PI / 4, scale: .25, armAngle: angle };
+    return { rotation: angle - Math.PI / 4, scale: .18, armAngle: angle };
   }
   function addLine(e, off) {
     const pts = e.p.map(([x, y]) => [x + off, y]), p = e.curved === false ? pts : DG.hand(pts, { amp: .65, seed: e.seed, per: 7 }), cum = DG.cum(p);
@@ -164,9 +164,15 @@ CLIPS.hand_drawn_marker = (() => {
       g.save(); g.beginPath(); g.rect(0, L.content_top, L.width, L.content_bottom - L.content_top); g.clip(); g.globalAlpha = opacity;
       const pose=handPose(pen,L);
       g.translate(...pen); g.rotate(pose.rotation); g.scale(pose.scale, pose.scale); g.translate(-tip[0], -tip[1]);
-      const a = [1253, 885], b = [1052, 1253], far = 5000;           // 把袖口一直延长到画外，手臂不会在半空断掉
-      g.fillStyle = BG; g.strokeStyle = INK; g.lineWidth = 3; g.beginPath(); g.moveTo(...a); g.lineTo(a[0] + far, a[1] + far); g.lineTo(b[0] + far, b[1] + far); g.lineTo(...b); g.closePath(); g.fill();
-      g.beginPath(); g.moveTo(...a); g.lineTo(a[0] + far, a[1] + far); g.moveTo(...b); g.lineTo(b[0] + far, b[1] + far); g.stroke(); g.drawImage(hand, 0, 0); g.restore(); }
+      // 宽屏直接显示素材中固定比例的手臂；不再叠加延长袖管，画板其余区域留白。
+      // 竖屏沿用原有袖管处理，避免影响旧项目的手部构图。
+      if (L.mode !== 'landscape') {
+        const a = [1253, 885], b = [1052, 1253], far = 5000;
+        g.fillStyle = BG; g.strokeStyle = INK; g.lineWidth = 3; g.beginPath(); g.moveTo(...a); g.lineTo(a[0] + far, a[1] + far); g.lineTo(b[0] + far, b[1] + far); g.lineTo(...b); g.closePath(); g.fill();
+        g.beginPath(); g.moveTo(...a); g.lineTo(a[0] + far, a[1] + far); g.moveTo(...b); g.lineTo(b[0] + far, b[1] + far); g.stroke();
+      }
+      g.drawImage(hand, 0, 0);
+      g.restore(); }
     g.fillStyle = INK; const H = ctx.data.header;
     if (sc.index === 0) { g.font = '48px "LXGWWenKai-500"'; g.fillText(H.first[0], L.header_x, L.header_first_y[0]); g.font = '43px "LXGWWenKai-500"'; g.fillText(H.first[1], L.header_x, L.header_first_y[1]); }
     else { g.font = '44px "LXGWWenKai-500"'; g.fillText(H.other, L.header_x, L.header_other_y); }

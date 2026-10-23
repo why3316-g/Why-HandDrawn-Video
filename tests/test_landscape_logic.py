@@ -50,6 +50,16 @@ class LogicTests(unittest.TestCase):
                     *[{'kind':'text','index':0,'str':s,'x':700,'y':y,'size':60} for s,y in [('甲',350),('乙',550),('甲乙',750)]]]
             self.assertEqual(self.check(p, events),[])
 
+    def test_centered_text_explanation_and_off_center_rejection(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p=Path(tmp); plan=self.fixture(p)
+            plan['boards'][0].update(presentation='centered_text',space_reason='居中文字解释完整的概念与限定词')
+            (p/'design/logic-plan.json').write_text(json.dumps(plan),encoding='utf-8')
+            ev=[{'kind':'text','index':0,'str':s,'x':690,'y':y,'size':60} for s,y in [('有效应对生活压力',460),('发挥自己的潜能',650)]]
+            self.assertEqual(self.check(p,ev),[])
+            ev[0]['x']=80; ev[1]['x']=80
+            self.assertTrue(self.check(p,ev))
+
     def test_found_document_requires_real_verified_image_and_use(self):
         with tempfile.TemporaryDirectory() as tmp:
             p=Path(tmp); plan=self.fixture(p)
@@ -90,6 +100,6 @@ class LogicTests(unittest.TestCase):
         code="const fs=require('fs'),vm=require('vm');const c={CLIPS:{}};vm.runInNewContext(fs.readFileSync(process.argv[1],'utf8'),c);console.log(JSON.stringify(['landscape','portrait'].map(mode=>c.CLIPS.hand_drawn_marker.inspectHand([100,320],{mode,width:1920,content_bottom:900}))));"
         a,b=json.loads(subprocess.check_output(['node','-e',code,str(js)],text=True))
         self.assertGreaterEqual(a['armAngle'],.78); self.assertLessEqual(a['armAngle'],1.14)
-        self.assertLess(a['scale'],b['scale']); self.assertAlmostEqual(b['rotation'],-.7853981633974483)
+        self.assertEqual(a['scale'],.18); self.assertLess(a['scale'],b['scale']); self.assertAlmostEqual(b['rotation'],-.7853981633974483)
 
 if __name__=='__main__': unittest.main()

@@ -119,8 +119,16 @@ def logic_errors(project, scenes, events):
         if any(e['kind']=='hero' for e in ev):
             if b.get('presentation')!='person': errors.append(f'{sc["id"]}实际有人物，策划字段不一致')
             continue
+        if b.get('presentation')=='centered_text':
+            texts=[e for e in ev if e['kind']=='text']
+            bound=event_bounds(texts)
+            if (len(b.get('space_reason',''))<8 or len(texts)<2 or sum(len(e['str']) for e in texts)<12 or not bound or
+                abs((bound[0]+bound[2])/2-(left+right)/2)>width*.05 or
+                abs((bound[1]+bound[3])/2-(top+bottom)/2)>height*.08):
+                errors.append(f'{sc["id"]}居中文字板须有语义说明、有效分组且整体居中')
+            continue
         if b.get('presentation')!='full_board_logic' or len(b.get('space_reason',''))<8:
-            errors.append(f'{sc["id"]}缺手绘人物；只有必须全板的居中完整逻辑图可例外')
+            errors.append(f'{sc["id"]}无人板须登记为居中完整逻辑图或居中文字说明并写明策划')
             continue
         bound=event_bounds(ev)
         if not bound or sum(e['kind']=='text' for e in ev)<3 or not any(e['kind']=='line' for e in ev):

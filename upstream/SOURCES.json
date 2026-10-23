@@ -12,6 +12,17 @@
       "path": "references/PROMPT_PACK.md",
       "source": "docs/CHARACTER_VISUAL_STANDARD.md",
       "reason": "在生图提示词模板中补充角色与版式候选先供选择、获选后再用于正式镜头的执行要求。"
+    },
+    {
+      "path": "template/engine_overrides/clips/hand_drawn_marker.js",
+      "source": "approved landscape short-hand iteration",
+      "reason": "landscape固定短手scale=.18并取消续长袖管；portrait沿用原素材与变换。"
+    },
+    {
+      "path": "assets/marker-hand-landscape-v01.png",
+      "source": "Codex built-in image generation, edit of bundled marker-hand-v02.png",
+      "reason": "用户批准的通用短袖口手绘素材，仅宽屏使用；无人物案例、品牌或私人内容。",
+      "sha256": "49bc518754a624baf9994cf6e221e74ffe7620009f8d5a38efa57dca89f7cfb8"
     }
   ],
   "sources": [
