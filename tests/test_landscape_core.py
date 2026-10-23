@@ -1,5 +1,6 @@
 """双画幅的行为回归：坐标、旧项目默认、尺寸契约和实际工程初始化。"""
 import json
+import hashlib
 from pathlib import Path
 import subprocess
 import sys
@@ -52,6 +53,11 @@ class LandscapeCoreTests(unittest.TestCase):
             p = Path(tmp)
             (p / 'design').mkdir()
             (p / 'design/config.json').write_text('{"mode":"landscape"}', encoding='utf-8')
+            (p/'design/config.json').write_text('{"mode":"landscape","narration":"narration.txt"}',encoding='utf-8')
+            (p/'narration.txt').write_text('测试',encoding='utf-8')
+            (p/'design/logic-plan.json').write_text(json.dumps({'source_sha256':hashlib.sha256('测试'.encode()).hexdigest(),
+                'units':[{'id':'u','text':'测试','relations':[{'id':'r','type':'scene','quote':'测试','nodes':['测试'],'presentation':'技术夹具人物'}]}],
+                'documents':[],'boards':[{'id':'intro','relations':['r'],'presentation':'person'}]}),encoding='utf-8')
             (p / 'design/sprite-strokes-v01.json').write_text(json.dumps({
                 'sprites': {'person': {'rect': [0, 0, 400, 600]}}, 'source_images': {}}), encoding='utf-8')
             f = Film(p, SimpleNamespace(end=4.0))

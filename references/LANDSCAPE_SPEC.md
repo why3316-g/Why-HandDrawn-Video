@@ -79,3 +79,7 @@ python <skill>/scripts/export_website.py --project <项目> --video renders/<名
 ## G端机构宣传片（2026-10-22用户定稿）
 
 学校、教育局、企业等官网宣传片设`content_type: institutional_promo`：默认儒雅逸辰2.0（`yichen`，`zh_male_ruyayichen_uranus_bigtts`），语速0和同一正式播音指令；封面为正式机构宣传片主视觉，正文保持原手绘。唯一细则见`references/INSTITUTIONAL_PROMO.md`，本节覆盖其他文件中的大壹默认及白板封面要求，仅限此内容类型。用户明确要求原文直接转视频时保留原文，不强制改写。用户明确要求先看静态效果时可先出封面与若干图，记录授权范围，不伪造全文声音锁定、不进入动画渲染。
+
+## 逻辑设计与人物规则升级
+
+本页“人物不是每板必须”的旧表述由LANDSCAPE_LOGIC.md覆盖：先全文分析逻辑及官方文献检索，默认每板有手绘人物；唯一例外是必须全板呈现且居中的完整逻辑图。执行逻辑策划与机器/独立审片双闸门，不允许纯章节字板冒充逻辑图。

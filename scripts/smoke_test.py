@@ -98,6 +98,19 @@ def main():
                                'observation': '技术测试夹具：复用包内画风参考；只测试记录流转，不是新人物或内容审核。'})
     (project / 'design/shots.json').write_text(json.dumps(shots, ensure_ascii=False), encoding='utf-8')
     script('analyze_strokes.py')
+    if args.mode=='landscape':
+        full='\n'.join(narration)
+        document=project/'assets/images/document-fixture.png'
+        shutil.copyfile(skill/'assets/style-ref-C.png',document)
+        plan={'source_sha256':hashlib.sha256(full.encode()).hexdigest(),'units':[
+            {'id':f'u{k}','text':text,'relations':[{'id':f'r{k}','type':'scene','quote':text,
+             'nodes':[text],'qualifiers':[],'presentation':'技术夹具：人物配原文关键词'}]} for k,text in enumerate(narration)],
+            'documents':[{'id':'fixture','source_quote':'技术夹具：不是正式官方文献',
+              'search_queries':['技术夹具，不执行网络查询'],'status':'found','verified':True,
+              'official_url':'https://example.org/fixture','image_file':'assets/images/document-fixture.png',
+              'image_sha256':hashlib.sha256(document.read_bytes()).hexdigest(),'fixture_only':True}],
+            'boards':[{'id':sid,'relations':[f'r{k}'],'presentation':'person','documents':['fixture'] if k==0 else []} for k,sid in enumerate(('hook','next'))]}
+        (project/'design/logic-plan.json').write_text(json.dumps(plan,ensure_ascii=False),encoding='utf-8')
     film = '''import json,sys
 from pathlib import Path
 P=Path(__file__).resolve().parents[1]
@@ -112,6 +125,11 @@ F.panel(0,'hook',0)
 F.hero(0,'hook',cx,top,h,c.T('孩子')[0],c.T('玩手机')[0]-c.T('孩子')[0])
 F.text(0,'玩手机',145,480,72,c.T('玩手机')[0],.85,OR)
 F.line(0,[(145,530),(560,530)],c.T('手机')[0],.45,INK,6,False)
+if wide:
+    from PIL import Image
+    with Image.open(P/'assets/images/document-fixture.png') as im:
+        w,h=360,360*im.height/im.width
+    F.media(0,'../assets/images/document-fixture.png',120,610,w,h,1.0,.4,document_id='fixture')
 F.panel(1,'next',c.T('妈妈')[0]-.1)
 F.hero(1,'next',cx,top,h,c.T('妈妈')[0],c.T('看着他')[0]-c.T('妈妈')[0])
 F.text(1,'看着他',145,480,72,c.T('看着他')[0],.85,OR)

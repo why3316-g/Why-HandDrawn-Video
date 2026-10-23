@@ -55,6 +55,12 @@ if a.stills:
 if not a.out:
     sys.exit('整片渲染需要 --out')
 chk = P / 'qc/asset-usage.json'
+if layout['mode']=='landscape':
+    from hdv.logic import logic_errors
+    sp=json.loads(spec.read_text(encoding='utf-8'))
+    problems=logic_errors(P, sp['data']['scenes'], sp['data']['events'])
+    if problems:
+        sys.exit('宽屏逻辑策划未通过：'+'；'.join(problems))
 if not a.draft:
     if not chk.is_file() or not json.loads(chk.read_text(encoding='utf-8')).get('pass'):
         sys.exit('资产使用检查未通过或未运行：先运行 make_manifest.py（规范要求：检查不通过禁止渲染）。仅做草稿可加 --draft。')

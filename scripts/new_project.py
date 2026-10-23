@@ -73,6 +73,8 @@ if a.content_type == 'institutional_promo':
     config['voice'] = 'yichen'
     config['cover_style'] = 'institutional'
 if a.mode == 'landscape':
+    config['logic_plan'] = 'design/logic-plan.json'
+    shutil.copy(SKILL / 'template/design/logic-plan.json', P / 'design/logic-plan.json')
     config['header_first'] = ['本片主题（锁稿后填写）', '本节要点（取自口播）']
     config['header_other'] = '本片主题'
 config_path.write_text(json.dumps(config, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')

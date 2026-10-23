@@ -23,14 +23,26 @@ def workspace_for(project):
     return workspace
 
 VOICES = {'dayi': 'zh_male_dayi_uranus_bigtts', 'xiaohe': 'zh_female_xiaohe_uranus_bigtts',
-          'jitang': 'zh_female_jitangnv_uranus_bigtts'}   # 大壹（默认）；小何 2.0（女学生第一人称口吻）；鸡汤女 2.0（家长角度且家长是妈妈）
+          'wenroumama': 'zh_female_wenroumama_uranus_bigtts'}
+# 音色槽位：dayi=大壹（默认）；xiaohe=小何 2.0（学生第一人称，女生或性别不明）；
+# wenroumama=温柔妈妈 2.0（家长角度且家长是妈妈。2026-10-22 起取代鸡汤女 2.0——鸡汤女偏慢、停顿多、不自然，已停用）
 # 每个音色的默认语速（火山 audio_params.speech_rate，取值 [-50,100]，100=2.0 倍速、0=1.0 倍速）。
-# 2026-10-21 用户指定：鸡汤女 2.0 听起来偏慢，后台测试值为 14（≈1.14 倍），工作流默认按 14 提交；
+# 2026-10-21：鸡汤女 2.0 偏慢，用户后台测试值 14；2026-10-22 用户改选温柔妈妈 2.0，定稿语速 19（≈1.19 倍）。
 # 大壹与小何 2.0 仍为 10（≈1.1 倍）。命令行 --speech-rate 只在用户明确要求时覆盖，且必须写进回执。
-SPEECH_RATE = {'dayi': 10, 'xiaohe': 10, 'jitang': 14}
+SPEECH_RATE = {'dayi': 10, 'xiaohe': 10, 'wenroumama': 19}
 from institutional_profile import PROFILE as INSTITUTIONAL, select_voice, broadcast_tts_class
 VOICES['yichen'] = INSTITUTIONAL['voice_id']
 SPEECH_RATE['yichen'] = INSTITUTIONAL['speech_rate']
+
+
+# 每个音色的默认语音指令（additions.context_texts，仅 2.0 音色可用、只第一个值生效、不计费）。
+# 温柔妈妈 2.0 定稿配方：语速 19 + 下面这条「重指令」+ 生成后压停顿（compress_pauses.py --cap 0.35）。
+# 2026-10-22 实测（同段 116 字）：无指令 21.72 s / 5.34 字/s / 中位基频 182 Hz；
+# 加这条重指令 19.85 s / 5.84 字/s / 198 Hz（更急）；再压停顿 19.34 s / 6.00 字/s / 最长静音 0.38 s。
+# 轻指令（「自然一点、别拖」）实测无效，甚至更慢，所以指令必须把情绪说透。改这条指令前先跑 audition_variants.py 横评。
+VOICE_DIRECTIVES = {
+    'wenroumama': '你现在很着急，几乎不给喘气的机会，一口气把话说完，声音有点发紧。',
+}
 
 
 
@@ -51,7 +63,7 @@ def speech_rate_for(voice, profile, override=None):
 
 def check_private_voice(values):
     if values.get('DOUBAO_SPEECH_VOICE_TYPE') not in VOICES.values():
-        raise ValueError('Private voice is not an approved voice (dayi/xiaohe/jitang).')
+        raise ValueError('Private voice is not an approved voice (dayi/xiaohe/wenroumama).')
 
 
 def other_voice_receipt(project, text_hash, voice_id):
@@ -168,11 +180,11 @@ def ensure_wav(path):
         raise ValueError('Invalid alignment WAV format.')
     return {'path':str(wav),'sha256':sha_bytes(wav.read_bytes()),'duration_seconds':duration,'sample_rate':44100,'channels':1}
 
-def run(project,version='v01',preflight=False,voice=None,confirm_voice_change=False,provider='auto',speech_rate=None,join_lines=False):
+def run(project,version='v01',preflight=False,voice=None,confirm_voice_change=False,provider='auto',speech_rate=None,join_lines=False,directive=None,no_directive=False):
     project=Path(project).resolve()
     workspace=workspace_for(project)
     voice=select_voice(project,voice)
-    if voice not in VOICES: raise ValueError('Unknown voice; use dayi, xiaohe or jitang.')
+    if voice not in VOICES: raise ValueError('Unknown voice; use dayi, xiaohe or wenroumama.')
     voice_id=VOICES[voice]
     if not re.fullmatch(r'v\d{2,}',version): raise ValueError('Invalid version.')
     text=(project/'brief/narration.txt').read_text(encoding='utf-8').strip()
@@ -195,12 +207,19 @@ def run(project,version='v01',preflight=False,voice=None,confirm_voice_change=Fa
         return run_edge(project,workspace,text,text_hash,version,preflight,voice,confirm_voice_change)
     profile=json.loads((SKILL/'upstream/openmontage-audio/voice-profile.json').read_text(encoding='utf-8'))
     rate,rate_source=speech_rate_for(voice,profile,speech_rate)
+    # 语音指令：命令行为准 > 音色默认配方 > 无。--no-directive 用于对照实验，正式成片不要用。
+    if no_directive and directive: raise ValueError('--no-directive 与 --context-texts 不能同时使用。')
+    if no_directive: directive,directive_source=None,'disabled'
+    elif directive: directive_source='cli_override'
+    elif voice in VOICE_DIRECTIVES: directive,directive_source=VOICE_DIRECTIVES[voice],'voice_recipe'
+    else: directive,directive_source=None,'none'
     profile=dict(profile); profile['speech_rate']=rate
     target=project/'assets/audio'/f'narration-volcengine-{voice}-full-{version}.mp3'
     summary={'provider':'volcengine','voice':voice,'text_sha256':text_hash,'text_characters':len(text),
              'utf16_units':utf16_length(text),'full_body':True,'single_submission':True,
              'speech_rate':rate,'speed_multiplier':speed_multiplier(rate),'speech_rate_source':rate_source,
              'text_transform':text_transform,'tts_text_sha256':tts_hash,
+             'voice_directive':directive,'voice_directive_source':directive_source,
              'output':str(target),'segmentation_allowed':False,
              'institutional_directive':INSTITUTIONAL['directive'] if voice=='yichen' else None}
     if preflight:
@@ -229,12 +248,14 @@ def run(project,version='v01',preflight=False,voice=None,confirm_voice_change=Fa
     values=load_private(workspace)
     check_private_voice(values)
     sys.path.insert(0,str(SKILL/'upstream/openmontage-audio'))
-    from tools.audio.doubao_tts import DoubaoTTS
+    sys.path.insert(0,str(Path(__file__).resolve().parent))
+    from directives import DoubaoTTSWithDirectives
     print('Submitting one full-body Volcengine task.',flush=True)
-    tts_class=broadcast_tts_class() if voice=='yichen' else DoubaoTTS
+    tts_class=broadcast_tts_class() if voice=='yichen' else DoubaoTTSWithDirectives
     result=tts_class().execute({'text':tts_text,'voice_id':voice_id,
         'resource_id':profile['resource_id'],'speech_rate':profile['speech_rate'],
         'format':'mp3','sample_rate':profile['sample_rate'],'enable_timestamp':True,
+        'context_texts':directive,
         'voice_validation':profile['voice_validation'],'output_path':str(target),
         'timeout_seconds':300,'poll_interval_seconds':2.0,'user_id':'huashu-art-motion'})
     receipt=target.with_suffix('.mp3.json')
@@ -254,6 +275,7 @@ def run(project,version='v01',preflight=False,voice=None,confirm_voice_change=Fa
         'institutional_directive':INSTITUTIONAL['directive'] if voice=='yichen' else None,
         'speech_rate':profile['speech_rate'],'speed_multiplier':speed_multiplier(profile['speech_rate']),
         'speech_rate_source':rate_source,
+        'voice_directive':directive,'voice_directive_source':directive_source,
         'text_transform':text_transform,'tts_text_sha256':tts_hash,
         'request_count':1,'full_body':True,'synthesis_segmentation':False,
         'task_id':result.data.get('task_id'),'source':'Why-HandDrawn-Video/upstream/SOURCES.json',
@@ -274,16 +296,26 @@ if __name__=='__main__':
     parser.add_argument('--project',required=True)
     parser.add_argument('--version',default='v01')
     parser.add_argument('--provider',default='auto',choices=('auto','volcengine','edge'),help='auto=配了火山密钥用火山、没配用免费微软语音；也可在工作区 .hdv-workspace.json 写 tts_provider 固定')
-    parser.add_argument('--voice',default=None,choices=sorted(VOICES),help='dayi=大壹（默认）；xiaohe=小何 2.0，仅学生第一人称且为女生或性别不明的稿子；jitang=鸡汤女 2.0，仅家长角度且家长是妈妈的稿子（家长是爸爸用 dayi）')
+    parser.add_argument('--voice',default=None,choices=sorted(VOICES),help='dayi=大壹（默认）；xiaohe=小何 2.0，仅学生第一人称且为女生或性别不明的稿子；wenroumama=温柔妈妈 2.0，仅家长角度且家长是妈妈的稿子（家长是爸爸用 dayi）。鸡汤女 2.0 已于 2026-10-22 停用')
     parser.add_argument('--confirm-voice-change',action='store_true',help='同一全文已用另一音色合成过，用户明确同意换声再合成时才加')
-    parser.add_argument('--speech-rate',type=int,default=None,help='火山 audio_params.speech_rate，[-50,100]，100=2.0 倍速。不填则按音色默认：大壹/小何 10、鸡汤女 14。只在用户明确要求改语速时使用，值会写进回执')
+    parser.add_argument('--speech-rate',type=int,default=None,help='火山 audio_params.speech_rate，[-50,100]，100=2.0 倍速。不填则按音色默认：大壹/小何 10、温柔妈妈 19。只在用户明确要求改语速时使用，值会写进回执')
+    parser.add_argument('--context-texts',default=None,help='覆盖音色默认语音指令（additions.context_texts）。温柔妈妈 2.0 默认已带「重指令」配方，非必要不要改；改前先跑 audition_variants.py 横评')
+    parser.add_argument('--no-directive',action='store_true',help='关闭音色默认语音指令，仅用于对照实验；正式成片不要用')
     parser.add_argument('--join-lines',action='store_true',help='只去掉 brief/narration.txt 的段间换行（逐字不变，脚本会校验），用于消除段末换行造成的额外停顿；口播原文不改')
     parser.add_argument('--preflight',action='store_true')
     args=parser.parse_args()
     try:
-        run(args.project,args.version,args.preflight,args.voice,args.confirm_voice_change,args.provider,args.speech_rate,args.join_lines)
+        run(args.project,args.version,args.preflight,args.voice,args.confirm_voice_change,args.provider,
+            args.speech_rate,args.join_lines,args.context_texts,args.no_directive)
         if not args.preflight:
-            print('下一步：跑 check_voice.py，把试听消息发给用户后结束本轮回复，等用户试听；用户明确说通过后才运行 lock_voice.py。没锁定前不写表演表、不生图。')
+            print('下一步（顺序不能省）：')
+            print('  1) 温柔妈妈 2.0 必须做停顿压缩：python <skill>/scripts/audio/compress_pauses.py --project . '
+                  f'--wav assets/audio/narration-volcengine-{args.voice}-full-{args.version}.wav '
+                  f'--json assets/audio/narration-volcengine-{args.voice}-full-{args.version}.mp3.json '
+                  '--text brief/narration.txt --cap 0.35 --tag <新版本号>；然后把 design/config.json 的 '
+                  'volc_json/voice_wav/voice_mp3 指过去。')
+            print('  2) 跑 check_voice.py（含 ASR），把试听消息发给用户后结束本轮回复，等用户试听。')
+            print('  3) 用户明确说通过后才运行 lock_voice.py。没锁定前不写表演表、不生图。')
     except Exception as exc:
         # Credential-bearing transport errors are never echoed.
         print(json.dumps({'success':False,'error_type':type(exc).__name__,'resubmit_allowed':False}))

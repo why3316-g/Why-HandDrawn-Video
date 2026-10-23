@@ -43,6 +43,11 @@ class Film:
     def hero(self, i, sid, cx, top, h, at, dur):
         self.EV.append({'kind': 'hero', 'index': i, 'id': sid, 'cx': cx, 'top': top, 'h': h, 'at': round(at, 3), 'dur': round(dur, 3)})
 
+    def media(self, i, image, x, y, w, h, at, dur=.4, document_id=None):
+        """真实官方原件原样展示；不对文献重画或伪造封面。"""
+        self.EV.append({'kind':'media','index':i,'image':image,'x':x,'y':y,'w':w,'h':h,
+                        'at':round(at,3),'dur':round(dur,3),'document_id':document_id})
+
     # ---- 组合道具 ----
     @staticmethod
     def ell(x, y, rx, ry, n=60):
@@ -100,6 +105,14 @@ class Film:
         errs, warns = lint(self.EV, layout=self.layout)
         errs.extend(panel_rhythm_issues(self.EV, scenes))
         errs.extend(panel_exit_issues(self.EV, scenes))
+        if self.layout['mode']=='landscape':
+            from .logic import logic_errors
+            errs.extend(logic_errors(self.P, scenes, self.EV))
+        for e in self.EV:
+            if e['kind']=='media':
+                if e['x']<self.layout['text_bounds'][0] or e['x']+e['w']>self.layout['text_bounds'][2] or e['y']<self.layout['content_top'] or e['y']+e['h']>self.layout['content_bottom']:
+                    errs.append(f"板{e['index']}官方原件图片越出安全区")
+                spec['cues'].append({'at':0,'kind':'document','image':e['image'],'data':{'original_image':e['image']}})
         # 越界与开头自检（2026-10-13 修复：人物图越出画板会泄漏到相邻画板；开头必须先画人）
         from .lint import text_w as _tw
         left, top, right, bottom = self.layout['text_bounds']

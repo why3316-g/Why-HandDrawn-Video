@@ -86,6 +86,73 @@ def compose(shot, cast, concept_mode=False, wardrobe_map=None):
     return HEAD + body
 
 
+def _salvage_generated(stdout, out):
+    """Codex 已经生成了图，但它的 shell 复制步骤可能失败（Windows 上实测报
+    「Failed to create unified exec process: helper_unknown_error: setup refresh had errors」）。
+    这时图片其实已经落在 ~/.codex/generated_images/ 下，Codex 会在回复里写出该绝对路径
+    （英文「Generated PNG: `…`」或中文「生成的 PNG 暂存在：`…`」）。按路径把图拷进项目，
+    避免为同一张图再付费重生成一次。"""
+    import shutil
+    text = stdout.decode('utf-8', 'ignore') if isinstance(stdout, bytes) else str(stdout)
+    hits = re.findall(r'([A-Za-z]:[\\/][^`\'"\n]*?generated_images[^`\'"\n]*?\.png)', text)
+    for hit in reversed(hits):
+        src = Path(hit.strip())
+        if not src.is_file():
+            continue
+        out.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(src, out)
+        if out.is_file():
+            return True
+    return False
+
+
+def _salvage_from_rollout(out_rel, t0, out):
+    """最可靠的兜底：Codex 每次 exec 都会在 ~/.codex/sessions/<年>/<月>/<日>/rollout-*.jsonl 里留下完整会话。
+    找到 t0 之后新建、且内容里含本次 out_rel（说明就是这一次任务）的 rollout，从里面抠出它自己写下的
+    generated_images 绝对路径再拷回来。并发生图也不会串图。"""
+    import shutil, time as _t
+    root = Path.home() / '.codex' / 'sessions'
+    if not root.is_dir():
+        return False
+    days = {_t.strftime('%Y/%m/%d', _t.localtime(t0)), _t.strftime('%Y/%m/%d', _t.localtime())}
+    cands = []
+    for d in days:
+        p = root / d
+        if p.is_dir():
+            cands += [f for f in p.glob('rollout-*.jsonl') if f.stat().st_mtime >= t0 - 120]
+    for f in sorted(cands, key=lambda x: x.stat().st_mtime, reverse=True):
+        try:
+            text = f.read_text(encoding='utf-8', errors='ignore')
+        except OSError:
+            continue
+        if f'{out_rel}' not in text:
+            continue
+        hits = re.findall(r'([A-Za-z]:[\\/][^"\\\n]*?generated_images[^"\\\n]*?\.png)', text)
+        for hit in reversed(hits):
+            src = Path(hit)
+            if src.is_file():
+                out.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(src, out)
+                return out.is_file()
+    return False
+
+
+def _salvage_recent(out, t0):
+    """Path 拿不到时的兜底：Codex 的内置生图会把 PNG 落到 ~/.codex/generated_images/<session>/exec-<uuid>.png。
+    只认 t0 之后新出现的图；调用方必须保证同一时间只有一个生图任务在跑（--workers 1），否则多张新图无法判定归属。"""
+    import shutil
+    root = Path.home() / '.codex' / 'generated_images'
+    if not root.is_dir():
+        return False
+    fresh = [p for p in root.rglob('*.png') if p.stat().st_mtime >= t0 - 3]
+    if not fresh:
+        return False
+    src = max(fresh, key=lambda p: p.stat().st_mtime)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(src, out)
+    return out.is_file()
+
+
 def run(job):
     P, name, text, ref, out_rel, tool = job
     pf = P / f'design/prompts/{name}.txt'
@@ -124,6 +191,18 @@ def run(job):
                 code = r.returncode
                 attached = code == 0 and out.is_file()
                 (P / f'qc/codex-run-{name}-try{attempt}.log').write_bytes(r.stdout[-6000:] + b'\n---stderr---\n' + r.stderr[-3000:])
+                if not attached and _salvage_generated(r.stdout, out):
+                    attached = True
+                    rec['salvaged'] = True
+                    print(f'  {name}: 复制步骤失败，已按回复里的路径把图取回', flush=True)
+                elif not attached and _salvage_from_rollout(out_rel, t0, out):
+                    attached = True
+                    rec['salvaged'] = 'rollout'
+                    print(f'  {name}: 复制步骤失败，已从本次 Codex 会话记录里找到图片并取回', flush=True)
+                elif not attached and _salvage_recent(out, t0):
+                    attached = True
+                    rec['salvaged'] = 'recent'
+                    print(f'  {name}: 回复里没有路径，已按生成时间从 ~/.codex/generated_images 取回最新一张', flush=True)
             except subprocess.TimeoutExpired:
                 code = 'timeout-1200s'
             except FileNotFoundError:

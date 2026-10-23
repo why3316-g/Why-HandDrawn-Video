@@ -1,5 +1,6 @@
 """静音压缩（母带后处理，不改语音采样、不重新合成）。
 
+用途：温柔妈妈 2.0（家长角度·妈妈）配音配方的第三步，`--cap 0.35`。
 背景（2026-10-21 特级教师片）：用户反馈「句与句之间间隔太长、不自然，语速也偏慢」。
 实测结论：火山 Speech 2.0 的 audio_params.speech_rate 只加快「说话」，不缩短内部停顿；
 真正的句间空隙平均只有 0.115 s，长空隙全部在句子内部、由标点驱动
@@ -45,7 +46,7 @@ ap.add_argument('--project', default='.')
 ap.add_argument('--wav', required=True, help='母带 wav（44.1k/16bit/单声道为佳）')
 ap.add_argument('--json', required=True, help='对应 provider 时间戳 json')
 ap.add_argument('--text', default='brief/narration.txt', help='口播原稿，用于逐字校验')
-ap.add_argument('--cap', type=float, default=0.45, help='字间空隙上限（秒）')
+ap.add_argument('--cap', type=float, default=0.35, help='字间空隙上限（秒）；温柔妈妈 2.0 配方用 0.35')
 ap.add_argument('--min-cut', type=float, default=0.05, help='小于这个删除量的空隙不动（秒）')
 ap.add_argument('--fade', type=float, default=0.004, help='切点淡入淡出（秒），静音里只为防爆音')
 ap.add_argument('--tag', required=True, help='输出文件名里的版本标记，如 v04')

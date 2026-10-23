@@ -89,7 +89,7 @@ def opening_still_gaps(events, window=5.0, max_still=1.0, min_dur=.2):
     返回 [(起, 止)]：0–window 秒内"没有任何有效绘制事件"且长度 > max_still 的静止段。
     有效绘制事件 = 人物笔画、文字、圈/叉/勾/箭头、道具线条等 dur ≥ min_dur 的事件。
     字幕、标题栏、小时钟、镜头平移不算动画（它们不在事件表里，也不应被当作画面在动）。"""
-    iv = sorted((max(0.0, e['at']), min(window, e['at'] + e['dur'])) for e in events if e['at'] < window and e['dur'] >= min_dur)
+    iv = sorted((max(0.0, e['at']), min(window, e['at'] + e['dur'])) for e in events if e['at'] < window and e['dur'] >= min_dur and e['kind']!='media')
     gaps, cur = [], 0.0
     for a, b in iv:
         if a - cur > max_still + 1e-9:
@@ -109,6 +109,7 @@ def panel_rhythm_report(events, scenes, min_dur=.2):
             (max(start, float(e['at'])), min(end, float(e['at']) + float(e['dur'])))
             for e in events
             if e.get('index') == index and float(e.get('dur', 0)) >= min_dur
+            and e.get('kind') != 'media'
             and float(e['at']) < end and float(e['at']) + float(e['dur']) > start
         )
         cur = start

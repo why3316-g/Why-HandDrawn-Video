@@ -12,6 +12,13 @@ CLIPS.hand_drawn_marker = (() => {
     caption_size:52,caption_small_size:48,header_x:85,header_first_y:[245,308],header_other_y:250,pen_enter_x:1280,pen_enter_bottom:1350};
   let strokes = [], hand, tip = [147, 119], scenes = [], spriteMeta = {}, spriteSources = {}, spriteBuffers = {};
   const smooth = (a, b, t) => { const p = U.clamp((t - a) / (b - a)); return p * p * (3 - 2 * p); };
+  function handPose(pen, layout) {
+    if (layout.mode !== 'landscape') return { rotation: -Math.PI / 4, scale: .34, armAngle: 0 };
+    // 素材袖管自身沿45°右下。只在宽屏修正：不再旋成水平，也不按画宽放大。
+    const angle = Math.max(Math.PI / 4, Math.min(Math.PI * 65 / 180,
+      Math.atan2(layout.content_bottom + 180 - pen[1], layout.width + 100 - pen[0])));
+    return { rotation: angle - Math.PI / 4, scale: .25, armAngle: angle };
+  }
   function addLine(e, off) {
     const pts = e.p.map(([x, y]) => [x + off, y]), p = e.curved === false ? pts : DG.hand(pts, { amp: .65, seed: e.seed, per: 7 }), cum = DG.cum(p);
     strokes.push({ kind: 'line', p, cum, len: cum.at(-1), at: e.at, dur: e.dur, color: e.color || INK, width: e.width || 6, index: e.index });
@@ -93,6 +100,12 @@ CLIPS.hand_drawn_marker = (() => {
     ctx.data.events.forEach((e, k) => {
       const off = e.index * PANEL; e.seed = k + 22;
       if (e.kind === 'line') addLine(e, off);
+      else if (e.kind === 'media') {
+        const cue=ctx.cues.find(q=>q.kind==='document'&&q.data?.original_image===e.image);
+        const image=ctx.IMG[cue?.image||e.image];
+        if (!image) throw new Error('官方原件加载失败 '+e.image);
+        strokes.push({kind:'media',image,x:e.x+off,y:e.y,w:e.w,h:e.h,at:e.at,dur:e.dur,index:e.index,fade:true});
+      }
       else if (e.kind === 'text') strokes.push({ fade: !!e.fade, kind: 'text', str: e.str, x: e.x + off, y: e.y, size: e.size, at: e.at, dur: e.dur, color: e.color || INK, index: e.index });
       else if (e.kind === 'hero') { const m = spriteMeta[e.id], w = m.rect[2] / m.rect[3] * e.h; addSprite(e.id, e.cx - w / 2 + off, e.top, e.h, e.at, e.dur, e.index); }
     });
@@ -132,6 +145,7 @@ CLIPS.hand_drawn_marker = (() => {
     for (const s of strokes) { if (t < s.at || s.index * PANEL - cam > L.width || (s.index + 1) * PANEL - cam < 0) continue;
       g.save(); g.beginPath(); g.rect(s.index * PANEL, L.content_top, L.width, L.content_bottom - L.content_top); g.clip();   // 每笔只画在自己的画板内，越界部分不泄漏到相邻画板
       const q = U.clamp((t - s.at) / s.dur); g.strokeStyle = s.color; g.lineWidth = s.width || 6; g.lineCap = 'round'; g.lineJoin = 'round';
+      if (s.kind === 'media') { g.globalAlpha=q; g.drawImage(s.image,s.x,s.y,s.w,s.h); g.restore(); continue; }
       if (s.fade) { g.globalAlpha = q; g.font = `${s.size}px "LXGWWenKai-500"`; g.fillStyle = s.color; g.fillText(s.str, s.x, s.y); g.restore(); continue; }   // 渐显文字：不用笔写，不进笔的轨迹
       const sr = s.kind === 'sprite' ? drawSprite(g, s, q) : null; const p = sr ? sr.tip : s.kind === 'text' ? drawText(g, s, q) : DG.drawPartial(g, s.p, s.cum, s.len * q); if (q < 1) activeTip = p; g.restore(); }
     if (L.mode === 'portrait') for (const s of scenes) { if (t >= s.start && t < s.end && Math.abs(s.index * PANEL - cam) < L.width + 220) ambient(g, t, s); }
@@ -148,7 +162,8 @@ CLIPS.hand_drawn_marker = (() => {
       else if (prev && t - prev.at - prev.dur < .28) { const q = (t - prev.at - prev.dur) / .28; pen = [end[0] - cam + q * 360, end[1] + q * 100]; opacity = 1 - q; } }
     if (pen && hand && pen[0] > -180 && pen[0] < L.width) {
       g.save(); g.beginPath(); g.rect(0, L.content_top, L.width, L.content_bottom - L.content_top); g.clip(); g.globalAlpha = opacity;
-      g.translate(...pen); g.rotate(-Math.PI / 4); g.scale(.34, .34); g.translate(-tip[0], -tip[1]);
+      const pose=handPose(pen,L);
+      g.translate(...pen); g.rotate(pose.rotation); g.scale(pose.scale, pose.scale); g.translate(-tip[0], -tip[1]);
       const a = [1253, 885], b = [1052, 1253], far = 5000;           // 把袖口一直延长到画外，手臂不会在半空断掉
       g.fillStyle = BG; g.strokeStyle = INK; g.lineWidth = 3; g.beginPath(); g.moveTo(...a); g.lineTo(a[0] + far, a[1] + far); g.lineTo(b[0] + far, b[1] + far); g.lineTo(...b); g.closePath(); g.fill();
       g.beginPath(); g.moveTo(...a); g.lineTo(a[0] + far, a[1] + far); g.moveTo(...b); g.lineTo(b[0] + far, b[1] + far); g.stroke(); g.drawImage(hand, 0, 0); g.restore(); }
@@ -158,5 +173,5 @@ CLIPS.hand_drawn_marker = (() => {
     caption(g, t, ctx);
     const fade = U.clamp((t - (ctx.dur - .7)) / .6); if (fade > 0) { g.fillStyle = `rgba(255,255,255,${fade})`; g.fillRect(0, 0, L.width, L.height); }   // 结尾 0.6s 淡出到白板，不突然定格
   }
-  return { inspect: () => strokes.filter(s => s.kind === 'sprite').map(s => ({ id: s.id, at: s.at, end: s.at + s.dur, index: s.index })), safe: true, fonts: ['LXGWWenKai-500', 'PuHui-Medium'], init, draw };
+  return { inspectHand: handPose, inspect: () => strokes.filter(s => s.kind === 'sprite').map(s => ({ id: s.id, at: s.at, end: s.at + s.dur, index: s.index })), safe: true, fonts: ['LXGWWenKai-500', 'PuHui-Medium'], init, draw };
 })();
