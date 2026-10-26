@@ -31,9 +31,9 @@
 ## 5 步骤
 1. 写 `design/cover-philosophy-vNN.md` 和 `design/cover.json`（格式见 `scripts/make_cover.py` 顶部）。
 2. `python <skill>/scripts/make_cover.py --text-only`：先看文字底稿（大小、断行、橙色位置）。
-3. 按当前工具生成插画并合成：Claude / WorkBuddy 运行 `make_cover.py`，由 Codex CLI 生图；Codex 运行 `make_cover.py --emit-image-prompt` 导出提示词，用 Codex 内置生图工具生成并保存为 `assets/images/cover-illus-vNN.png`，然后运行 `make_cover.py --skip-gen --imagegen-tool "Codex 内置生图工具"`（可加 `--imagegen-version <版本>`）合成。插画目检（躺平玩手机？白底？无字？衣服白色？）。
+3. 按当前工具生成插画并合成：Claude / WorkBuddy 运行 `make_cover.py`，由 Codex CLI 生图；Codex 运行 `make_cover.py --emit-image-prompt` 导出提示词，用 Codex 内置生图工具生成并保存为 `assets/images/cover-illus-vNN.png`，然后运行 `make_cover.py --skip-gen --imagegen-tool "Codex 内置生图工具"`（可加 `--imagegen-version <版本>`）合成；**Gemini Antigravity 默认用内置 `image-generator` 子代理**——同样 `--emit-image-prompt` 导出后交子代理生成到 `assets/images/cover-illus-vNN.png`，再 `make_cover.py --skip-gen --imagegen-tool "Antigravity image-generator 子代理"` 合成（宽高比按插画要求传入，不传分辨率）。插画目检（躺平玩手机？白底？无字？衣服白色？）。
 4. 只调字号/位置：`--skip-gen`，不再调生图；换版本 `--version v02`。
-5. 记录 `design/cover-record-vNN.json`（标题、字体、提示词、实际生图工具及可获得的版本、插画与封面 SHA-256、canvas-design 来源与日期）；用 Codex 内置工具时通过 `--imagegen-tool` 和 `--imagegen-version` 登记，不要求本机安装 Codex CLI。
+5. 记录 `design/cover-record-vNN.json`（标题、字体、提示词、实际生图工具及可获得的版本、插画与封面 SHA-256、canvas-design 来源与日期）；用 Codex / Antigravity 内置工具时通过 `--imagegen-tool` 和 `--imagegen-version` 登记（Antigravity 写 `Antigravity image-generator 子代理`），不要求本机安装 Codex CLI。
 
 ## 6 用户闸门（第 5 步）
 封面和人物图联系表同一轮发给用户；通过后才能进入后面的笔画提取、事件表和渲染。封面有改动要重新审核。

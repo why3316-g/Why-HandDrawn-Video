@@ -4,6 +4,7 @@
   2) python <skill>/scripts/make_cover.py --text-only      只出文字底稿 renders/<名>-cover-text-vNN.png，供检查
   3) Claude / WorkBuddy：运行本脚本，由当前 Codex CLI 生图并合成。
      Codex：先运行 --emit-image-prompt 导出提示词，使用 Codex 内置生图工具生成指定插画，再运行 --skip-gen --imagegen-tool "Codex 内置生图工具" 合成。
+     Gemini Antigravity：先运行 --emit-image-prompt 导出提示词，交给内置 image-generator 子代理生成指定插画，再运行 --skip-gen --imagegen-tool "Antigravity image-generator 子代理" 合成。
   --emit-image-prompt 只导出封面插画提示词；--skip-gen 复用已有插画只合成；--imagegen-tool / --imagegen-version 登记外部内置工具；--version v02 出新版本，不覆盖旧文件。
 design/cover.json 例：
 {"lines": [[["初一男孩开学一个月", 0]], [["就", 0], ["不想上学", 1], ["了，", 0]], [["指导3周后", 0]], [["爱上了上学", 1, 150]]],

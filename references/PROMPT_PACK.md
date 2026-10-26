@@ -19,7 +19,7 @@
 
 多人/新人物：参考图只给风格，STYLE + "defines ONLY the clean ligne-claire ink style (do not copy its person)" + scene。
 
-**工具分流**：Claude 与 WorkBuddy 通过当前 Codex CLI 执行这套提示词；Codex 使用内置生图工具并运行 `gen_sprites.py --emit-only` 导出提示词。Codex 内置工具生成时保留同一提示词，并将该镜头 `qc/imagegen-run.json` 列出的全部 `ref` 文件实际作为图像输入；缺任一输入就不得调用生图。不要只复制提示词文本。不得改写角色、镜头或画风要求；输出仍为 3:2 纯白底、无字，放到指定项目路径。记录实际工具、可获得的版本、调用方式、提示词、参考图、对应原文和输出 SHA-256，逐图验收。
+**工具分流**：Claude 与 WorkBuddy 通过当前 Codex CLI 执行这套提示词；Codex 用内置生图工具，Gemini Antigravity 默认用内置的 `image-generator` 子代理生图（2026-10-26），两者都先运行 `gen_sprites.py --emit-only` 导出提示词。内置路径生成时保留同一提示词，并将该镜头 `qc/imagegen-run.json` 列出的全部 `ref` 文件实际作为图像输入；缺任一输入就不得调用生图。不要只复制提示词文本。不得改写角色、镜头或画风要求；输出仍为 3:2 纯白底、无字，放到指定项目路径（Antigravity 只传 3:2 宽高比，不传分辨率）。记录实际工具、可获得的版本、调用方式、提示词、参考图、对应原文和输出 SHA-256，逐图验收。
 
 **角色 identity 写法**：衣服一律写成白色（white top / white trousers），不写灰、黑、米、蓝等颜色；发色黑；加一句 tiny orange cuffs。样板「小宇」的白卫衣 + 白长裤 + 橙袖口是标准。
 
@@ -29,7 +29,7 @@
 
 **服饰参考资产（强制）**：妈妈当前有 3 张可选服饰参考（两款旗袍、一款连衣裙），男女班主任各有一张，文件均在 `assets/characters/wardrobe-reference-v01/`。新建项目会自动复制整个目录到项目内同路径。`design/cast.json` 给妈妈/班主任标记 `wardrobe_role`，每个实际出镜镜头在 `design/shots.json` 的 `wardrobe_references` 中按 cast key 选出服饰参考。妈妈必须逐镜按脚本选择一张，不把固定衣服套用全片；教师按角色性别使用对应图。任何新生成人物镜头只要出现妈妈/班主任，就必须将对应图作为图像输入实际附加到生图调用，不能只在文字提示词中提路径。
 
-`gen_sprites.py` 会检查参考是否存在、角色类别是否匹配，并在 CLI 调用中真实附加；`--emit-only` 后用于 Codex 内置生图时，必须把该镜头 `qc/imagegen-run.json` 中的 `ref` 路径逐一传入 `referenced_image_paths`，再把实际传入的路径写回同一记录的 `attached_ref`。模板/清单校验会拦截缺失引用，不能跳过。服饰图只作衣服剪裁与廓形参考，不复制参考人物的身份、脸、发型、表情、鞋子、姿势、体型细节、眼镜或道具。旧字段 `reference_images` 代表同一角色身份参考，不要与服饰参考混用。
+`gen_sprites.py` 会检查参考是否存在、角色类别是否匹配，并在 CLI 调用中真实附加；`--emit-only` 后用于 Codex 内置生图或 Antigravity `image-generator` 子代理时，必须把该镜头 `qc/imagegen-run.json` 中的 `ref` 路径逐一传入参考图槽位（Codex 为 `referenced_image_paths`），再把实际传入的路径写回同一记录的 `attached_ref`。模板/清单校验会拦截缺失引用，不能跳过。服饰图只作衣服剪裁与廓形参考，不复制参考人物的身份、脸、发型、表情、鞋子、姿势、体型细节、眼镜或道具。旧字段 `reference_images` 代表同一角色身份参考，不要与服饰参考混用。
 
 **多人白板版式**：这里的“多人”指同一块白板呈现多个不同家庭/个案，不是同户成员数量。A 主次错落、B 纵向三段、C 三点均衡三张版式图都已审核通过并保存在 `assets/layouts/multi-household-v01/`，按每块白板的脚本节奏选用；同一视频不同板可混用。整板镜头可在 `shots.json` 使用 `layout_reference_images` 数组列出对应资产；提示词必须说明附件只参考空间层级、留白与疏密，不复制人物、案例事实、文字、道具或背景。每格只画原稿出现的家庭情况，格与格留白分开、不共用房间/家具/视线；正式镜头仍要逐格对应原稿和表演表。
 

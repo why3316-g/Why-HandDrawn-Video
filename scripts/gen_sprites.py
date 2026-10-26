@@ -1,7 +1,7 @@
-"""人物线稿生图：读 design/shots.json + design/cast.json，按 PROMPT_PACK 的固定骨架拼提示词。Claude 和 WorkBuddy 默认经当前 Codex CLI 并行生成；Codex 使用 --emit-only 导出提示词后改用内置生图工具。
---emit-only：只写提示词文件（design/prompts/*.txt）不调用任何工具——供 Codex 内置生图路径使用；按提示词指定的路径保存产物，并手动补齐生图日志中的工具、版本与输出 SHA-256。
+"""人物线稿生图：读 design/shots.json + design/cast.json，按 PROMPT_PACK 的固定骨架拼提示词。Claude 和 WorkBuddy 默认经当前 Codex CLI 并行生成；Codex 与 Gemini Antigravity 使用 --emit-only 导出提示词后改用各自内置生图（Codex 内置生图工具 / Antigravity 内置 image-generator 子代理）。
+--emit-only：只写提示词文件（design/prompts/*.txt）不调用任何工具——供 Codex / Antigravity 内置生图路径使用；按提示词指定的路径保存产物，并手动补齐生图日志中的工具、版本与输出 SHA-256。--emit-tool 登记实际执行的内置生图工具名（如 "Antigravity image-generator 子代理"）。
 顺序：先 concept（以 style_ref 为"仅风格"参考）→ 其余镜头以 concept 为参考，保持同一个人。记录写入 qc/imagegen-run.json 与 qc/IMAGEGEN_LOG.md（不含密钥）。
-用法（项目根目录）：python <skill>/scripts/gen_sprites.py [--emit-only] [--only id,id] [--workers 6]"""
+用法（项目根目录）：python <skill>/scripts/gen_sprites.py [--emit-only [--emit-tool 名称]] [--only id,id] [--workers 6]"""
 import argparse, hashlib, json, os, re, shutil, subprocess, sys, time
 from pathlib import Path
 try: sys.stdout.reconfigure(encoding='utf-8')
@@ -215,15 +215,15 @@ def run(job):
     return rec
 
 
-def write_log(P, recs, tool):
+def write_log(P, recs, tool, emit_tool=''):
     """把本次运行写入 qc/imagegen-run.json 与 qc/IMAGEGEN_LOG.md（累积追加，不覆盖旧记录）。"""
     if not recs:
         return
     ver = (subprocess.run([shutil.which('codex.cmd') or 'codex', '--version'], capture_output=True, text=True).stdout.strip() if tool == 'codex'
-           else 'volcano-ark ' + (os.environ.get('ARK_IMAGE_MODEL') or 'doubao-seedream-4-5-251128') if tool == 'volcano' else 'emit-only')
+           else 'volcano-ark ' + (os.environ.get('ARK_IMAGE_MODEL') or 'doubao-seedream-4-5-251128') if tool == 'volcano' else (emit_tool or 'emit-only'))
     runf = P / 'qc/imagegen-run.json'
     runs = json.loads(runf.read_text(encoding='utf-8')).get('runs', []) if runf.exists() else []
-    runs.append({'time': time.strftime('%Y-%m-%d %H:%M'), 'codex': ver, 'records': recs})
+    runs.append({'time': time.strftime('%Y-%m-%d %H:%M'), 'tool': ver, 'codex': ver, 'records': recs})
     runf.write_text(json.dumps({'runs': runs}, ensure_ascii=False, indent=1), encoding='utf-8')
     rows = ['| 图 | 提示词 | 计划参考图 | 实际附图 | 过程 | 输出 SHA-256（前 16 位） |', '|---|---|---|---|---|---|']
     for r in recs:
@@ -232,7 +232,7 @@ def write_log(P, recs, tool):
     log = P / 'qc/IMAGEGEN_LOG.md'
     nl = chr(10)
     prev = log.read_text(encoding='utf-8').rstrip(nl) + nl + nl if log.exists() else '# 生图记录（密钥与令牌不入档）' + nl + nl
-    section = f'## {time.strftime("%Y-%m-%d %H:%M")} 运行（{ver}）' + nl + nl + nl.join(rows) + nl + nl + 'Codex 内置生图为 emit-only：生成后须把实际传给图像工具的参考路径写入 imagegen-run.json 对应记录 attached_ref；未填写会被渲染前清单拦截。失败的尝试如实保留；没有用别的办法替代。逐图验收见 design/performance-plan.json。' + nl
+    section = f'## {time.strftime("%Y-%m-%d %H:%M")} 运行（{ver}）' + nl + nl + nl.join(rows) + nl + nl + '内置生图（Codex 内置工具 / Antigravity image-generator 子代理）走 emit-only：生成后须把实际传给图像工具的参考路径写入 imagegen-run.json 对应记录 attached_ref；未填写会被渲染前清单拦截。失败的尝试如实保留；没有用别的办法替代。逐图验收见 design/performance-plan.json。' + nl
     log.write_text(prev + section, encoding='utf-8')
 
 
@@ -280,6 +280,7 @@ def codex_default_model():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--project', default='.'); ap.add_argument('--emit-only', action='store_true'); ap.add_argument('--only', default=''); ap.add_argument('--workers', type=int, default=6)
+    ap.add_argument('--emit-tool', default='', help='--emit-only 时登记实际执行的内置生图工具名，如 "Codex 内置生图工具" / "Antigravity image-generator 子代理"；默认记 emit-only')
     ap.add_argument('--image-backend', default='codex', choices=('codex', 'volcano'), help='codex=Codex CLI（默认，需 ChatGPT 账号登录）；volcano=火山方舟 Seedream（需 ARK_API_KEY，见 README）')
     ap.add_argument('--confirm-model', default='', help='用户已同意用非 gpt-6-luna 的默认模型生图时，填该模型名')
     a = ap.parse_args()
@@ -329,7 +330,7 @@ def main():
         recs.append(run((P, f'concept-{key}-v01', compose(None, c, True), style_ref, out_rel, tool)))
     for key in gen_cast:
         if not (P / f'assets/images/concept-{key}-v01.png').exists() and tool != 'emit':
-            write_log(P, recs, tool)
+            write_log(P, recs, tool, a.emit_tool)
             print(f'concept-{key} 未生成，停止（需要先通过形象基准图，再出各镜头）'); sys.exit(1)
     # 2) 各镜头
     jobs = []
@@ -345,7 +346,7 @@ def main():
         jobs.append((P, Path(out_rel).stem, compose(s, cast, wardrobe_map=wardrobe_map), ref, out_rel, tool))
     with ThreadPoolExecutor(a.workers) as ex:
         recs += list(ex.map(run, jobs))
-    write_log(P, recs, tool)
+    write_log(P, recs, tool, a.emit_tool)
     print('ALL DONE')
 
 

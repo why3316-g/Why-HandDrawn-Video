@@ -191,8 +191,8 @@ tracks = [p for p in tracks if p.suffix.lower() in ('.mp3', '.wav', '.flac', '.m
 add('可用配乐文件（仍须按账号核实授权登记）', bool(tracks), f'{lib}：{len(tracks)} 首',
     '公开分享包不附原三首曲目；在工作区 assets/audio-library/bgm 放入本账号可商用曲目，并登记 LICENSES.md', required=a.production)
 codex = which('codex.cmd', 'codex')
-add('Claude/WorkBuddy 的 Codex CLI', bool(codex), codex or '未发现；Codex 本身使用内置生图工具',
-    'Claude/WorkBuddy 生图前需配置已登录的 Codex CLI；Codex 会话不需要', required=False)
+add('Claude/WorkBuddy 的 Codex CLI', bool(codex), codex or '未发现；Codex 用内置生图工具、Antigravity 用内置 image-generator 子代理',
+    'Claude/WorkBuddy 生图前需配置已登录的 Codex CLI；Codex 与 Antigravity 会话不需要', required=False)
 bad = 0
 for name, ok, detail, fix, req in rows:
     print(f"{'✓' if ok else '✗' if req else '△'} {name}: {detail}")
