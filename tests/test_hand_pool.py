@@ -75,7 +75,9 @@ class PoolBehaviourTests(unittest.TestCase):
             with tempfile.TemporaryDirectory() as ws:
                 hand_pool.record_use(ws, {'file': files[0]})
                 picks = {hand_pool.pick(skill, ws)['file'] for _ in range(30)}
-                self.assertNotIn(files[0], picks, '上一支用过的手不应立刻重复')
+                self.assertEqual(picks, {files[1]}, '一轮内不得重复，2 张池时只能轮到另一张')
+                hand_pool.record_use(ws, {'file': files[1]})
+                self.assertIn(hand_pool.pick(skill, ws)['file'], files, '两张都用过后重新开一轮')
                 self.assertEqual(hand_pool.pick(skill, ws, '02')['file'], files[1])
 
     def test_install_writes_meta_and_asset(self):

@@ -3,7 +3,8 @@
 规则
 - 池目录：<skill>/assets/hands/hand-pool-v01/；只取该目录**根下**的 PNG，不递归、不进任何子目录（备用图另存工作区归档）。
 - 一片一双手：每个新项目随机取一张，全片从第一笔到最后一笔用同一张，不在片中换手。
-- 尽量不连着重复：上一次用过的手记在 <工作区>/assets/hand-usage.json，随机时避开它（池里只剩一张时除外）。
+- 轮着用：最近用过的顺序记在 <工作区>/assets/hand-usage.json，取图时把"本轮还没用过的之外的"排除，
+  池里 8 张就等于 8 支片一轮、顺序随机；池里只剩一张时直接用那张。
 - 新增图片：直接丢进池目录 → `python scripts/hand_pool.py --sync` 自动量笔尖、写清单 → 之后自动参与随机。
 - 新图必须与现有 8 张同构图：透明底、笔尖朝左上、袖口朝右下、只有一只手一支笔、画布约 1100–1550 px。
   构图不同（笔尖不在左上角、多手多笔、白底不透明）时，要在清单里手写 tip/scale，或另开 pool。
@@ -103,6 +104,19 @@ def last_used(workspace):
         return None
 
 
+def recent_used(workspace, n):
+    """最近用过的前 n 张（新的在前）。取图时把这一批排除，保证一轮内不重复——8 张就等于轮流用。"""
+    if not workspace or n <= 0:
+        return []
+    f = Path(workspace) / USAGE
+    if not f.is_file():
+        return []
+    try:
+        return list(json.loads(f.read_text(encoding='utf-8')).get('history', []))[:n]
+    except Exception:
+        return []
+
+
 def record_use(workspace, entry):
     if not workspace:
         return None
@@ -123,7 +137,8 @@ def record_use(workspace, entry):
 
 
 def pick(skill=None, workspace=None, forced=None):
-    """一片一双手：随机取一张，避开上一次用过的那张。forced 可用全名或前缀（如 03）。"""
+    """一片一双手：在"本轮还没用过"的图里随机取一张。池里 8 张时等于轮着用，顺序随机。
+    forced 可用全名或前缀（如 03）强制指定。"""
     pool = entries(skill)
     if not pool:
         raise SystemExit(f'手部素材池为空：{pool_dir(skill)}。放 1 张以上透明底 PNG 再建项目。')
@@ -132,8 +147,8 @@ def pick(skill=None, workspace=None, forced=None):
         if not hit:
             raise SystemExit(f'池里没有 {forced}；可选：' + '、'.join(e['file'] for e in pool))
         return hit[0]
-    skip = last_used(workspace)
-    candidates = [e for e in pool if e['file'] != skip] or pool
+    skip = set(recent_used(workspace, len(pool) - 1))
+    candidates = [e for e in pool if e['file'] not in skip] or pool
     return random.SystemRandom().choice(candidates)
 
 
