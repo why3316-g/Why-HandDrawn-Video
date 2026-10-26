@@ -19,4 +19,4 @@
 学校、教育局、企业等官网宣传片用content_type=institutional_promo；默认儒雅逸辰2.0（yichen）、语速0与正式播音指令，封面用正式机构宣传片风格，正文仍手绘。唯一细则见references/INSTITUTIONAL_PROMO.md；本节覆盖其他段落旧默认，仅限机构宣传片。用户明确要求原文直接做视频时不得强制改写；明确要求先看静态图可先出美术预览，不伪造全文锁音、不进入动画渲染。
 
 ## 宽屏风格定稿
-landscape与portrait是两种独立风格。宽屏使用固定短手、自然收袖与后方留白、无装饰竖色条；按内容穿插居中人物、居中文字/逻辑和左右讲解。唯一标准references/LANDSCAPE_LOGIC.md。竖屏原实现保留；用户明确原文直转时不强制改写。
+landscape与portrait是两种独立风格。宽屏手部按 references/HAND_POOL.md：公开版不带素材池图片，退回到 assets/marker-hand-landscape-v01.png 短手（scale .18、袖口原样收口、后方留白）；自用版则与竖屏同一素材池、同一 45°。无装饰竖色条；按内容穿插居中人物、居中文字/逻辑和左右讲解。唯一标准references/LANDSCAPE_LOGIC.md。竖屏原实现保留；用户明确原文直转时不强制改写。

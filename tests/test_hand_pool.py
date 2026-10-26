@@ -173,7 +173,8 @@ class RotationGateTests(unittest.TestCase):
             self.assertAlmostEqual(f.hand_rotation, entry['rotation'])
             self.assertIsNone(f.hand_sleeve)
 
-    def test_landscape_ignores_pool(self):
+    def test_landscape_uses_pool_too(self):
+        """2026-10-26 用户定稿：宽屏与竖屏同一套——同一素材池、同一 45°，只是缩放走宽屏基准。"""
         with tempfile.TemporaryDirectory() as tmp:
             skill = make_fake_skill(Path(tmp) / 'skill')
             entry = hand_pool.entries(skill)[0]
@@ -183,8 +184,34 @@ class RotationGateTests(unittest.TestCase):
             cfg['hand'] = entry['file']
             (p / 'design/config.json').write_text(json.dumps(cfg), encoding='utf-8')
             f = Film(p, SimpleNamespace(end=4.0))
+            self.assertEqual(f.hand, '../assets/images/' + entry['file'], '宽屏不再固定用短手素材')
+            self.assertAlmostEqual(f.hand_scale, entry['scale_landscape'])
+            self.assertAlmostEqual(f.hand_rotation, entry['rotation'])
+            self.assertIsNone(f.hand_sleeve, '彩色手在宽屏同样不画袖管延伸')
+
+    def test_landscape_reads_scale_landscape_from_meta(self):
+        """宽屏缩放必须取 meta 的 scale_landscape，不能误用竖屏的 scale。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            p = make_project(Path(tmp) / 'proj', {'mode': 'landscape', 'hand': 'x.png'})
+            (p / 'assets/images').mkdir(parents=True)
+            (p / 'assets/images/x.png').write_bytes(LEGACY_HAND.read_bytes())
+            (p / 'assets/images/hand-meta.json').write_text(json.dumps(
+                {'file': 'x.png', 'tip': [10, 11], 'scale': .5, 'scale_landscape': .21,
+                 'rotation': -3.0, 'sleeve': None}), encoding='utf-8')
+            f = Film(p, SimpleNamespace(end=4.0))
+            self.assertAlmostEqual(f.hand_scale, .21)
+            self.assertAlmostEqual(f.hand_rotation, -3.0)
+            self.assertEqual(f.hand_tip, [10, 11])
+
+    def test_old_landscape_project_keeps_approved_hand(self):
+        """老宽屏工程只写了 hand_landscape 且没 meta 时，仍用已批准的短手、缩放 .18。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            p = make_project(Path(tmp) / 'proj',
+                             {'mode': 'landscape', 'hand_landscape': 'marker-hand-landscape-v01.png'})
+            f = Film(p, SimpleNamespace(end=4.0))
             self.assertEqual(f.hand, '../assets/images/marker-hand-landscape-v01.png')
             self.assertAlmostEqual(f.hand_scale, .18)
+            self.assertAlmostEqual(f.hand_rotation, 0.0)
 
     def test_legacy_hand_keeps_old_geometry(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -93,14 +93,19 @@ class LogicTests(unittest.TestCase):
             (p/'design/config.json').write_text('{}')
             self.assertEqual(self.check(p),[])
 
-    def test_hand_pose_is_diagonal_in_wide_and_legacy_in_portrait(self):
+    def test_hand_pose_is_45_in_both_modes(self):
+        """2026-10-26 用户定稿：竖屏与宽屏同一套——手臂都归一到右下 45°，且都不预旋（角度由
+        spec.data.handRotation 给），宽屏只比竖屏缩放小。"""
+        import math
         import shutil
         if not shutil.which('node'): self.skipTest('node unavailable')
         js=SKILL/'template/engine_overrides/clips/hand_drawn_marker.js'
         code="const fs=require('fs'),vm=require('vm');const c={CLIPS:{}};vm.runInNewContext(fs.readFileSync(process.argv[1],'utf8'),c);console.log(JSON.stringify(['landscape','portrait'].map(mode=>c.CLIPS.hand_drawn_marker.inspectHand([100,320],{mode,width:1920,content_bottom:900}))));"
         a,b=json.loads(subprocess.check_output(['node','-e',code,str(js)],text=True))
-        self.assertGreaterEqual(a['armAngle'],.78); self.assertLessEqual(a['armAngle'],1.14)
+        self.assertAlmostEqual(a['armAngle'],math.pi/4,places=4)   # 宽屏也固定 45°，不再指向右下角动态变角
+        self.assertAlmostEqual(b['armAngle'],math.pi/4,places=4)
+        self.assertAlmostEqual(a['rotation'],0)                    # 缺省不预旋，按素材原姿态
+        self.assertAlmostEqual(b['rotation'],0)
         self.assertEqual(a['scale'],.18); self.assertLess(a['scale'],b['scale'])
-        self.assertAlmostEqual(b['rotation'],0)      # 竖屏 2026-10-26 起手臂保持素材原姿态（右下 45°），不再旋 -45°
 
 if __name__=='__main__': unittest.main()

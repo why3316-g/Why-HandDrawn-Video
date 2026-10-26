@@ -1,7 +1,8 @@
 """新建一个 Why-HandDrawn-Video 项目：目录骨架 + 复制花叔引擎并打补丁 + 渲染语法 + 项目内库 + 固定素材。
 用法：python <skill>/scripts/new_project.py <英文短名> [--workspace 工作区根] [--date 20261010] [--mode portrait|landscape] [--hand 03]
 结果：<工作区>/projects/<日期>-<短名>-v01/ ，里面自包含（design/hdv 是项目内库，之后不再依赖 Skill 目录）。
-手与笔：竖屏从 assets/hands/hand-pool-v01/ 随机取一张装进 assets/images/，参数写入 hand-meta.json，全片同一双。"""
+手与笔：竖屏与宽屏都从 assets/hands/hand-pool-v01/ 随机取一张装进 assets/images/，参数写入 hand-meta.json，
+全片同一双，手臂统一归一到右下 45°；池缺失时竖屏退回 marker-hand-v02.png、宽屏退回 marker-hand-landscape-v01.png。"""
 import argparse, datetime, json, re, shutil, sys
 from pathlib import Path
 try: sys.stdout.reconfigure(encoding='utf-8')
@@ -80,26 +81,30 @@ if a.mode == 'landscape':
     shutil.copy(SKILL / 'template/design/logic-plan.json', P / 'design/logic-plan.json')
     config['header_first'] = ['本片主题（锁稿后填写）', '本节要点（取自口播）']
     config['header_other'] = '本片主题'
-# 手与笔：竖屏随机取素材池一张，全片同一张（2026-10-26 用户定稿）；宽屏仍用已批准的短手素材。
+# 手与笔：竖屏与宽屏同一套——随机取素材池一张，全片同一张，手臂归一到右下 45°（2026-10-26 用户定稿）。
 hand_note = ''
-if a.mode == 'portrait':
-    try:
-        entry = pick_hand(SKILL, ws, a.hand)
-    except SystemExit as exc:
-        print(f'手部素材池不可用，改用旧线稿手：{exc}')
-        entry = None
-    if entry:
-        hand_meta = install_hand(P, entry)
-        config['hand'] = hand_meta['file']
-        record_hand_use(ws, entry)
-        hand_note = f"- 手与笔：{hand_meta['file']}（素材池随取，笔尖 {hand_meta['tip']}，缩放 {hand_meta['scale']}，全片同一双）\n"
+entry = None
+try:
+    entry = pick_hand(SKILL, ws, a.hand)
+except SystemExit as exc:
+    print(f'手部素材池不可用，改用旧线稿手：{exc}')
+if entry:
+    hand_meta = install_hand(P, entry)
+    config['hand'] = hand_meta['file']
+    record_hand_use(ws, entry)
+    if a.mode == 'landscape':
+        config['hand_landscape'] = hand_meta['file']     # 老代码读这个字段，写同值保持兼容
+        hand_note = (f"- 手与笔：{hand_meta['file']}（素材池随取，宽屏缩放 {hand_meta.get('scale_landscape')}，"
+                     f"手臂 45°，全片同一双）\n")
     else:
-        config['hand'] = 'marker-hand-v02.png'
-        hand_note = '- 手与笔：marker-hand-v02.png（素材池缺失，退回旧线稿手）\n'
+        hand_note = f"- 手与笔：{hand_meta['file']}（素材池随取，笔尖 {hand_meta['tip']}，缩放 {hand_meta['scale']}，手臂 45°，全片同一双）\n"
+elif a.mode == 'landscape':
+    config['hand'] = 'marker-hand-landscape-v01.png'
+    config['hand_landscape'] = 'marker-hand-landscape-v01.png'
+    hand_note = '- 手与笔：marker-hand-landscape-v01.png（素材池缺失，退回已批准的宽屏短手）\n'
 else:
     config['hand'] = 'marker-hand-v02.png'
-    config['hand_landscape'] = 'marker-hand-landscape-v01.png'
-    hand_note = '- 手与笔：宽屏用 marker-hand-landscape-v01.png（不受竖屏素材池影响）\n'
+    hand_note = '- 手与笔：marker-hand-v02.png（素材池缺失，退回旧线稿手）\n'
 config_path.write_text(json.dumps(config, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
 brief_path = P / 'brief/BRIEF.md'
 brief = brief_path.read_text(encoding='utf-8').replace('1080×1920', f"{layout['width']}×{layout['height']}")
@@ -110,11 +115,12 @@ if a.mode == 'landscape':
     brief += '- 文章转讲解：原文保存在 brief/；口播候选及原文对应表经用户确认后才锁定 narration.txt。版式与网站交付见 Skill references/LANDSCAPE_SPEC.md。\n'
 brief_path.write_text(brief, encoding='utf-8')
 shutil.copy(SKILL / 'template/STATUS.md', P / 'STATUS.md')
-for f in ('style-ref-C.png', 'marker-hand-landscape-v01.png'):
-    shutil.copy(SKILL / 'assets' / f, P / 'assets/images' / f)
+shutil.copy(SKILL / 'assets/style-ref-C.png', P / 'assets/images/style-ref-C.png')
 if config['hand'] == 'marker-hand-v02.png':      # 素材池缺失时的退路，保留旧线稿手与其参数
     for f in ('marker-hand-v02.png', 'marker-hand-meta-v02.json'):
         shutil.copy(SKILL / 'assets' / f, P / 'assets/images' / f)
+elif config['hand'] == 'marker-hand-landscape-v01.png':   # 宽屏退路
+    shutil.copy(SKILL / 'assets/marker-hand-landscape-v01.png', P / 'assets/images/marker-hand-landscape-v01.png')
 wardrobe_dir = copy_wardrobe_assets(SKILL, P)
 if wardrobe_dir:
     print(f'已复制妈妈与班主任服饰参考到项目：{wardrobe_dir}')

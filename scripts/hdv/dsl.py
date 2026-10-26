@@ -23,20 +23,22 @@ class Film:
         self.tail, self.fps, self.grammar = tail, fps, grammar
         self.aspect = {k: v['rect'][2] / v['rect'][3] for k, v in self.lib['sprites'].items()}
 
-    # ---- 手与笔（2026-10-26 用户定稿：竖屏随机取池内一张，全片同一张）----
+    # ---- 手与笔（2026-10-26 用户定稿：竖屏/宽屏都随机取池内一张，全片同一张，手臂 45°）----
     LEGACY_SLEEVE = [[1253, 885], [1052, 1253]]      # marker-hand-v02 的袖口延伸线（白底+墨线），只给旧线稿手用
 
     def _resolve_hand(self, hand, hand_tip):
-        """素材取自 design/config.json 的 hand，参数只做强制覆盖。笔尖/缩放/袖管几何跟着素材走：
-        assets/images/hand-meta.json 由 hand_pool.py 写入；竖屏彩色素材 sleeve=null，不画袖管延伸。
-        宽屏仍用已批准的短手素材 marker-hand-landscape-v01.png（.18），不受竖屏素材池影响。"""
+        """素材取自 design/config.json 的 hand，参数只做强制覆盖。笔尖/缩放/旋转跟着素材走：
+        assets/images/hand-meta.json 由 hand_pool.py 写入；彩色素材 sleeve=null，**不画袖管延伸**，
+        图片什么样就什么样（2026-10-26 用户定稿）。宽屏与竖屏同一套：同一素材池、同一 45° 口径，
+        只是缩放按宽屏基准（scale_landscape，等效原 .18@1254²，视觉大小不变）。"""
         cfg = {}
         cpath = self.P / 'design/config.json'
         if cpath.is_file():
             try: cfg = json.loads(cpath.read_text(encoding='utf-8'))
             except Exception: cfg = {}
         landscape = self.layout['mode'] == 'landscape'
-        name = hand or (cfg.get('hand_landscape') if landscape else cfg.get('hand'))
+        # 宽屏先读 hand_landscape（老工程只有这个字段），再退回 hand（新工程两者写同值）
+        name = hand or ((cfg.get('hand_landscape') or cfg.get('hand')) if landscape else cfg.get('hand'))
         name = Path(name).name if name else ('marker-hand-landscape-v01.png' if landscape else 'marker-hand-v02.png')
         tip = [147, 119]
         scale = .18 if landscape else .34
@@ -45,12 +47,13 @@ class Film:
         rotation = 0.0
         sleeve = None if landscape else self.LEGACY_SLEEVE
         meta_path = self.P / 'assets/images/hand-meta.json'
-        if not landscape and meta_path.is_file():
+        if meta_path.is_file():
             try: meta = json.loads(meta_path.read_text(encoding='utf-8'))
             except Exception: meta = {}
             if meta.get('file') == name:      # 只认当前这双手的参数，换图后不会错用旧笔尖
                 tip = list(meta.get('tip') or tip)
-                scale = float(meta.get('scale') or scale)
+                # 宽屏用宽屏基准缩放（scale_landscape）；老 meta 没这字段就保持 .18
+                scale = float(meta.get('scale_landscape') or scale) if landscape else float(meta.get('scale') or scale)
                 rotation = float(meta.get('rotation') or 0.0)
                 sleeve = meta.get('sleeve')
         if hand_tip: tip = list(hand_tip)

@@ -13,13 +13,10 @@ CLIPS.hand_drawn_marker = (() => {
   let strokes = [], hand, tip = [147, 119], scenes = [], spriteMeta = {}, spriteSources = {}, spriteBuffers = {};
   const smooth = (a, b, t) => { const p = U.clamp((t - a) / (b - a)); return p * p * (3 - 2 * p); };
   function handPose(pen, layout) {
-    // 竖屏：手臂从右下斜向上入画，袖口轴线约 45°（WHITEBOARD_GRAMMAR_Y3「从右下方入画、前臂斜向右下」）。
+    // 手臂轴向：竖屏与宽屏同一套（2026-10-26 用户定稿）——从右下斜向上约 45°，不再按画幅分两套。
     // 具体旋转角按素材实测写在 spec.data.handRotation（度，顺时针为正）；缺省 0 = 保持素材原姿态。
-    if (layout.mode !== 'landscape') return { rotation: 0, scale: .34, armAngle: 0 };
-    // 素材袖管自身沿45°右下。只在宽屏修正：不再旋成水平，也不按画宽放大。
-    const angle = Math.max(Math.PI / 4, Math.min(Math.PI * 65 / 180,
-      Math.atan2(layout.content_bottom + 180 - pen[1], layout.width + 100 - pen[0])));
-    return { rotation: angle - Math.PI / 4, scale: .18, armAngle: angle };
+    // armAngle 只用于自检/测试，汇报"这条手臂被摆到多少度"，已确定是 45°。
+    return { rotation: 0, scale: layout.mode === 'landscape' ? .18 : .34, armAngle: Math.PI / 4 };
   }
   function addLine(e, off) {
     const pts = e.p.map(([x, y]) => [x + off, y]), p = e.curved === false ? pts : DG.hand(pts, { amp: .65, seed: e.seed, per: 7 }), cum = DG.cum(p);
@@ -165,10 +162,10 @@ CLIPS.hand_drawn_marker = (() => {
     if (pen && hand && pen[0] > -180 && pen[0] < L.width) {
       g.save(); g.beginPath(); g.rect(0, L.content_top, L.width, L.content_bottom - L.content_top); g.clip(); g.globalAlpha = opacity;
       const pose=handPose(pen,L), hs=ctx.data.handScale; if (hs) pose.scale=hs;
-      const hr=ctx.data.handRotation; if (hr !== undefined && L.mode !== 'landscape') pose.rotation = hr * Math.PI / 180;
+      const hr=ctx.data.handRotation; if (hr !== undefined) pose.rotation = hr * Math.PI / 180;
       g.translate(...pen); g.rotate(pose.rotation); g.scale(pose.scale, pose.scale); g.translate(-tip[0], -tip[1]);
-      // 宽屏直接显示素材中固定比例的手臂；不再叠加延长袖管，画板其余区域留白。
-      // 竖屏：线稿手沿用原袖管延伸（白底+墨线盖住先画的内容）；彩色素材 sleeve=null，素材自带袖口，直接留白。
+      // 竖屏/宽屏都用素材池的彩色手：素材自带袖口，sleeve=null 就原样贴，不叠加袖管延伸（2026-10-26 用户定稿）。
+      // 只有旧线稿手 marker-hand-v02.png 带袖口遮挡线（白底+墨线盖住先画的内容），且只在竖屏用。
       const sl = ctx.data.sleeve === undefined ? [[1253, 885], [1052, 1253]] : ctx.data.sleeve;
       if (L.mode !== 'landscape' && sl) {
         const a = sl[0], b = sl[1], far = 5000;

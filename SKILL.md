@@ -52,4 +52,4 @@ description: 把标题和口播稿制作成白纸线稿、橙色强调、马克�
 学校、教育局、企业等官网宣传片用content_type=institutional_promo；默认儒雅逸辰2.0（yichen）、语速0与正式播音指令，封面用正式机构宣传片风格，正文仍手绘。唯一细则见references/INSTITUTIONAL_PROMO.md；本节覆盖其他段落旧默认，仅限机构宣传片。用户明确要求原文直接做视频时不得强制改写；明确要求先看静态图可先出美术预览，不伪造全文锁音、不进入动画渲染。
 
 ## 宽屏独立风格
-landscape先读references/LANDSCAPE_LOGIC.md：全文关系策划与真实原件检索，穿插居中人物、居中逻辑/说明及左右讲解；使用固定短手，袖口后留白，不加左侧装饰竖色条。portrait竖屏保留自身风格与实现。
+landscape先读references/LANDSCAPE_LOGIC.md：全文关系策划与真实原件检索，穿插居中人物、居中逻辑/说明及左右讲解；手部按 references/HAND_POOL.md（公开版不带素材池图片，退回 assets/marker-hand-landscape-v01.png 短手），袖口原样收口、后方留白，不加左侧装饰竖色条。portrait竖屏保留自身风格与实现。

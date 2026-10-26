@@ -11,6 +11,9 @@
   构图不同（笔尖不在左上角、多手多笔、白底不透明）时，要在清单里手写 tip/scale，或另开 pool。
 - 角度口径（2026-10-26 用户定 A 方案）：**固定 45°，不按素材原角**。渲染时把每张图绕笔尖旋到 45°，
   转幅 = |45° − 实测手臂轴|；>12° 报警、>15° 拒绝入片（此时袖口会被甩离画面，应重生成）。
+- 竖屏与宽屏同一套（同日定稿）：宽屏也用本池，缩放走 `scale_landscape`（等效原 .18@1254²，视觉大小不变）。
+- 袖口不延伸（用户定稿）：图片什么样就什么样，`sleeve` 恒为 null，不画袖管延伸到右下角；
+  只有旧线稿手 `marker-hand-v02.png` 保留它的袖口遮挡线。
 
 用法
   python scripts/hand_pool.py --list                 列出池内图片与参数
@@ -36,7 +39,8 @@ SKILL = Path(__file__).resolve().parents[1]
 POOL_REL = Path('assets/hands/hand-pool-v01')
 POOL_NAME = 'hand-pool-v01'
 MANIFEST = 'hand-pool-v01.json'
-BASELINE = 0.34 * math.hypot(1254, 1254)      # 样板 marker-hand-v02：1254² 对角、批准缩放 .34
+BASELINE = 0.34 * math.hypot(1254, 1254)      # 样板 marker-hand-v02：1254² 对角、批准缩放 .34（竖屏）
+LANDSCAPE_BASELINE = 0.18 * math.hypot(1254, 1254)   # 宽屏基准：批准缩放 .18@1254²，换成任意素材的等效缩放
 ARM_TARGET = 45.0                            # 手臂（袖口方向）统一归一到右下 45°，见 HAND_POOL.md
 ROT_WARN = 12.0                              # 转幅超过 12°：可用但报警，建议重生成
 ROT_MAX = 15.0                               # 转幅超过 15°：拒绝入池（袖口会被甩出画面或压住人物）
@@ -87,7 +91,9 @@ def measure(path):
     arm = math.degrees(math.atan2(cy - tip[1], cx - tip[0]))
     return {'size': [im.width, im.height], 'tip': [tip[0], tip[1]],
             'arm_angle': round(arm, 1), 'rotation': round(ARM_TARGET - arm, 1),
-            'scale': round(BASELINE / math.hypot(im.width, im.height), 3), 'sleeve': None}
+            'scale': round(BASELINE / math.hypot(im.width, im.height), 3),
+            'scale_landscape': round(LANDSCAPE_BASELINE / math.hypot(im.width, im.height), 3),
+            'sleeve': None}
 
 
 def load_manifest(skill=None):
@@ -113,6 +119,7 @@ def entries(skill=None):
         e['file'] = p.name
         e['path'] = str(p)
         e.setdefault('scale', round(BASELINE / math.hypot(*e['size']), 3))
+        e.setdefault('scale_landscape', round(LANDSCAPE_BASELINE / math.hypot(*e['size']), 3))
         e.setdefault('rotation', 0.0)      # 缺参数时按素材原姿态（多为 45° 右下），不硬旋 -45°
         e.setdefault('sleeve', None)
         e['gate'], e['gate_msg'] = rotation_check(e)
@@ -196,10 +203,11 @@ def install(project, entry):
     images = Path(project) / 'assets/images'
     images.mkdir(parents=True, exist_ok=True)
     shutil.copy(entry['path'], images / entry['file'])
-    meta = {k: entry.get(k) for k in ('file', 'size', 'tip', 'rotation', 'scale', 'sleeve', 'sha256')}
+    meta = {k: entry.get(k) for k in ('file', 'size', 'tip', 'rotation', 'scale', 'scale_landscape', 'sleeve', 'sha256')}
     meta['pool'] = POOL_NAME
     meta['source'] = f'{POOL_REL.as_posix()}/{entry["file"]}'
-    meta['note'] = '手与笔素材；tip=笔尖像素坐标，rotation=把手臂掰到右下 45° 的旋转角（度，顺时针为正），sleeve=null 表示不画旧线稿袖管延伸'
+    meta['note'] = ('手与笔素材；tip=笔尖像素坐标，rotation=把手臂掰到右下 45° 的旋转角（度，顺时针为正），'
+                    'scale=竖屏缩放，scale_landscape=宽屏缩放，sleeve=null 表示不画袖管延伸（图片原样）')
     (images / 'hand-meta.json').write_text(json.dumps(meta, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
     return meta
 
@@ -218,6 +226,7 @@ def sync(skill=None, bundle=True):
         images.append({'file': p.name, 'size': m['size'], 'tip': m['tip'], 'arm_angle': m['arm_angle'],
                        'rotation': m['rotation'], 'gate': level,
                        'scale': prev.get('scale', m['scale']),
+                       'scale_landscape': m['scale_landscape'],
                        'sleeve': prev.get('sleeve'),
                        'sha256': sha256_of(p), 'source': prev.get('source', f'{POOL_REL.as_posix()}/{p.name}')})
     data = {'schema': 1, 'pool': POOL_NAME, 'updated': datetime.now(timezone.utc).isoformat(timespec='seconds'),
