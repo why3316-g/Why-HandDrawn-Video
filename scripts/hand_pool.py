@@ -34,6 +34,7 @@ POOL_REL = Path('assets/hands/hand-pool-v01')
 POOL_NAME = 'hand-pool-v01'
 MANIFEST = 'hand-pool-v01.json'
 BASELINE = 0.34 * math.hypot(1254, 1254)      # 样板 marker-hand-v02：1254² 对角、批准缩放 .34
+ARM_TARGET = 45.0                            # 手臂（袖口方向）统一归一到右下 45°，见 HAND_POOL.md
 USAGE = Path('assets/hand-usage.json')
 
 
@@ -46,7 +47,10 @@ def sha256_of(path):
 
 
 def measure(path):
-    """量笔尖与建议缩放。笔尖取不透明像素里 x+y 最小的点：素材统一笔尖朝左上，极值点就是笔尖。"""
+    """量笔尖、手臂轴向与建议缩放。
+    笔尖：不透明像素里 x+y 最小的点（素材统一笔尖朝左上，极值点就是笔尖）。
+    手臂轴向：离笔尖最远那 40% 不透明像素的重心方向，即袖口朝哪边。
+    旋转：把手臂轴向掰到右下 45° 需要转的角度（正数=顺时针，canvas 约定）。"""
     try:
         import numpy as np
         from PIL import Image
@@ -58,9 +62,14 @@ def measure(path):
     if not len(xs):
         raise ValueError(f'{Path(path).name} 没有不透明像素，不是可用的手部素材')
     i = int((xs + ys).argmin())
-    diag = math.hypot(im.width, im.height)
-    return {'size': [im.width, im.height], 'tip': [int(xs[i]), int(ys[i])],
-            'scale': round(BASELINE / diag, 3), 'sleeve': None}
+    tip = (int(xs[i]), int(ys[i]))
+    dist = np.hypot(xs - tip[0], ys - tip[1])
+    far = dist > .6 * dist.max()
+    cx, cy = float(xs[far].mean()), float(ys[far].mean())
+    arm = math.degrees(math.atan2(cy - tip[1], cx - tip[0]))
+    return {'size': [im.width, im.height], 'tip': [tip[0], tip[1]],
+            'arm_angle': round(arm, 1), 'rotation': round(ARM_TARGET - arm, 1),
+            'scale': round(BASELINE / math.hypot(im.width, im.height), 3), 'sleeve': None}
 
 
 def load_manifest(skill=None):
@@ -86,6 +95,7 @@ def entries(skill=None):
         e['file'] = p.name
         e['path'] = str(p)
         e.setdefault('scale', round(BASELINE / math.hypot(*e['size']), 3))
+        e.setdefault('rotation', 0.0)      # 缺参数时按素材原姿态（多为 45° 右下），不硬旋 -45°
         e.setdefault('sleeve', None)
         e['sha256'] = sha256_of(p)
         out.append(e)
@@ -153,14 +163,14 @@ def pick(skill=None, workspace=None, forced=None):
 
 
 def install(project, entry):
-    """把选中的手装进项目：素材本体 + hand-meta.json（笔尖/缩放/袖管几何）。"""
+    """把选中的手装进项目：素材本体 + hand-meta.json（笔尖/缩放/旋转/袖管几何）。"""
     images = Path(project) / 'assets/images'
     images.mkdir(parents=True, exist_ok=True)
     shutil.copy(entry['path'], images / entry['file'])
-    meta = {k: entry.get(k) for k in ('file', 'size', 'tip', 'scale', 'sleeve', 'sha256')}
+    meta = {k: entry.get(k) for k in ('file', 'size', 'tip', 'rotation', 'scale', 'sleeve', 'sha256')}
     meta['pool'] = POOL_NAME
     meta['source'] = f'{POOL_REL.as_posix()}/{entry["file"]}'
-    meta['note'] = '手与笔素材；tip 是笔尖像素坐标，scale 为竖屏缩放，sleeve=null 表示不画袖管延伸（彩色素材自带袖口）'
+    meta['note'] = '手与笔素材；tip=笔尖像素坐标，rotation=把手臂掰到右下 45° 的旋转角（度，顺时针为正），sleeve=null 表示不画旧线稿袖管延伸'
     (images / 'hand-meta.json').write_text(json.dumps(meta, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
     return meta
 
@@ -175,12 +185,14 @@ def sync(skill=None, bundle=True):
             continue
         m = measure(p)
         prev = old.get(p.name, {})
-        images.append({'file': p.name, 'size': m['size'], 'tip': m['tip'],
-                       'scale': prev.get('scale', m['scale']), 'sleeve': prev.get('sleeve'),
+        images.append({'file': p.name, 'size': m['size'], 'tip': m['tip'], 'arm_angle': m['arm_angle'],
+                       'rotation': m['rotation'], 'scale': prev.get('scale', m['scale']),
+                       'sleeve': prev.get('sleeve'),
                        'sha256': sha256_of(p), 'source': prev.get('source', f'{POOL_REL.as_posix()}/{p.name}')})
     data = {'schema': 1, 'pool': POOL_NAME, 'updated': datetime.now(timezone.utc).isoformat(timespec='seconds'),
             'rule': '只用本目录根下的 PNG；不递归、不用子目录；每片随机一张、全片同一张',
-            'baseline': {'reference': 'assets/marker-hand-v02.png', 'scale': 0.34, 'diagonal': 1773},
+            'baseline': {'reference': 'assets/marker-hand-v02.png', 'scale': 0.34, 'diagonal': 1773,
+                         'arm_angle': 45, 'note': '手臂（袖口）轴向统一归一到右下 45°，rotation 按图实测'},
             'images': images}
     (d / MANIFEST).write_text(json.dumps(data, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
     if bundle and (d.parents[2] / 'BUNDLE_MANIFEST.json').is_file():

@@ -100,6 +100,7 @@ class LogicTests(unittest.TestCase):
         code="const fs=require('fs'),vm=require('vm');const c={CLIPS:{}};vm.runInNewContext(fs.readFileSync(process.argv[1],'utf8'),c);console.log(JSON.stringify(['landscape','portrait'].map(mode=>c.CLIPS.hand_drawn_marker.inspectHand([100,320],{mode,width:1920,content_bottom:900}))));"
         a,b=json.loads(subprocess.check_output(['node','-e',code,str(js)],text=True))
         self.assertGreaterEqual(a['armAngle'],.78); self.assertLessEqual(a['armAngle'],1.14)
-        self.assertEqual(a['scale'],.18); self.assertLess(a['scale'],b['scale']); self.assertAlmostEqual(b['rotation'],-.7853981633974483)
+        self.assertEqual(a['scale'],.18); self.assertLess(a['scale'],b['scale'])
+        self.assertAlmostEqual(b['rotation'],0)      # 竖屏 2026-10-26 起手臂保持素材原姿态（右下 45°），不再旋 -45°
 
 if __name__=='__main__': unittest.main()

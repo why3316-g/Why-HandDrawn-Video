@@ -13,6 +13,12 @@ sys.path.insert(0, str(SKILL / 'scripts'))
 import hand_pool
 from hdv.dsl import Film
 
+try:  # 量手臂朝向要读像素；缺依赖时整模块跳过，别甩一屏 traceback
+    import numpy  # noqa: F401
+    from PIL import Image  # noqa: F401
+except ImportError as e:  # pragma: no cover
+    raise unittest.SkipTest(f'手部素材池测试需要 Pillow + numpy（{e}）：先跑 scripts/env_check.py --install')
+
 LEGACY_HAND = SKILL / 'assets/marker-hand-v02.png'
 
 
@@ -88,9 +94,17 @@ class PoolBehaviourTests(unittest.TestCase):
             meta = hand_pool.install(p, entry)
             self.assertTrue((p / 'assets/images' / entry['file']).is_file())
             self.assertEqual(meta['tip'], entry['tip'])
+            self.assertIn('rotation', meta, '手臂轴向的旋转角必须随素材带出')
             self.assertIsNone(meta['sleeve'], '彩色手不带旧线稿袖管几何')
             saved = json.loads((p / 'assets/images/hand-meta.json').read_text(encoding='utf-8'))
             self.assertEqual(saved['file'], entry['file'])
+
+    def test_rotation_points_arm_to_bottom_right(self):
+        """手臂轴向右下 45°：measure 的 rotation 把实测角度补到 45（度，顺时针为正）。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            skill = make_fake_skill(Path(tmp) / 'skill')
+            for e in hand_pool.entries(skill):
+                self.assertAlmostEqual(e['arm_angle'] + e['rotation'], hand_pool.ARM_TARGET, places=1)
 
     def test_dsl_uses_pool_geometry(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -105,6 +119,7 @@ class PoolBehaviourTests(unittest.TestCase):
             self.assertEqual(f.hand, '../assets/images/' + entry['file'])
             self.assertEqual(f.hand_tip, entry['tip'])
             self.assertAlmostEqual(f.hand_scale, entry['scale'])
+            self.assertAlmostEqual(f.hand_rotation, entry['rotation'])
             self.assertIsNone(f.hand_sleeve)
 
     def test_landscape_ignores_pool(self):
@@ -127,6 +142,7 @@ class PoolBehaviourTests(unittest.TestCase):
             self.assertEqual(f.hand, '../assets/images/marker-hand-v02.png')
             self.assertEqual(f.hand_tip, [147, 119])
             self.assertAlmostEqual(f.hand_scale, .34)
+            self.assertEqual(f.hand_rotation, 0.0, '旧线稿手原姿态就是右下 45°，不再旋 -45°')
             self.assertEqual(f.hand_sleeve, [[1253, 885], [1052, 1253]])
 
 

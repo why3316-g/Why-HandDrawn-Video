@@ -13,7 +13,9 @@ CLIPS.hand_drawn_marker = (() => {
   let strokes = [], hand, tip = [147, 119], scenes = [], spriteMeta = {}, spriteSources = {}, spriteBuffers = {};
   const smooth = (a, b, t) => { const p = U.clamp((t - a) / (b - a)); return p * p * (3 - 2 * p); };
   function handPose(pen, layout) {
-    if (layout.mode !== 'landscape') return { rotation: -Math.PI / 4, scale: .34, armAngle: 0 };
+    // 竖屏：手臂从右下斜向上入画，袖口轴线约 45°（WHITEBOARD_GRAMMAR_Y3「从右下方入画、前臂斜向右下」）。
+    // 具体旋转角按素材实测写在 spec.data.handRotation（度，顺时针为正）；缺省 0 = 保持素材原姿态。
+    if (layout.mode !== 'landscape') return { rotation: 0, scale: .34, armAngle: 0 };
     // 素材袖管自身沿45°右下。只在宽屏修正：不再旋成水平，也不按画宽放大。
     const angle = Math.max(Math.PI / 4, Math.min(Math.PI * 65 / 180,
       Math.atan2(layout.content_bottom + 180 - pen[1], layout.width + 100 - pen[0])));
@@ -163,6 +165,7 @@ CLIPS.hand_drawn_marker = (() => {
     if (pen && hand && pen[0] > -180 && pen[0] < L.width) {
       g.save(); g.beginPath(); g.rect(0, L.content_top, L.width, L.content_bottom - L.content_top); g.clip(); g.globalAlpha = opacity;
       const pose=handPose(pen,L), hs=ctx.data.handScale; if (hs) pose.scale=hs;
+      const hr=ctx.data.handRotation; if (hr !== undefined && L.mode !== 'landscape') pose.rotation = hr * Math.PI / 180;
       g.translate(...pen); g.rotate(pose.rotation); g.scale(pose.scale, pose.scale); g.translate(-tip[0], -tip[1]);
       // 宽屏直接显示素材中固定比例的手臂；不再叠加延长袖管，画板其余区域留白。
       // 竖屏：线稿手沿用原袖管延伸（白底+墨线盖住先画的内容）；彩色素材 sleeve=null，素材自带袖口，直接留白。

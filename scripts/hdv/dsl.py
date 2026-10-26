@@ -40,6 +40,9 @@ class Film:
         name = Path(name).name if name else ('marker-hand-landscape-v01.png' if landscape else 'marker-hand-v02.png')
         tip = [147, 119]
         scale = .18 if landscape else .34
+        # 手臂轴向：素材本身（含旧线稿手 44.3°）已是右下 45°，一律不预旋——历史上固定 -45° 才是
+        # "手从右边平平伸进来"的根因。池内彩图另有实测 rotation 覆盖，见下。
+        rotation = 0.0
         sleeve = None if landscape else self.LEGACY_SLEEVE
         meta_path = self.P / 'assets/images/hand-meta.json'
         if not landscape and meta_path.is_file():
@@ -48,10 +51,11 @@ class Film:
             if meta.get('file') == name:      # 只认当前这双手的参数，换图后不会错用旧笔尖
                 tip = list(meta.get('tip') or tip)
                 scale = float(meta.get('scale') or scale)
+                rotation = float(meta.get('rotation') or 0.0)
                 sleeve = meta.get('sleeve')
         if hand_tip: tip = list(hand_tip)
         self.hand = '../assets/images/' + name
-        self.hand_tip, self.hand_scale, self.hand_sleeve = tip, scale, sleeve
+        self.hand_tip, self.hand_scale, self.hand_rotation, self.hand_sleeve = tip, scale, rotation, sleeve
 
     # ---- 时间 ----
     def S(self, phrase, nth=0, last=False): return self.clock.T(phrase, nth, last)[0]
@@ -128,7 +132,7 @@ class Film:
             scenes.append({'index': i, 'id': pid, 'start': round(max(0, st), 3), 'end': round(en, 3)})
         dur = round((self.clock.end + self.tail) * self.fps) / self.fps
         spec = {'grammar': self.grammar, 'duration': dur, 'fps': self.fps, 'width': self.layout['width'], 'height': self.layout['height'],
-                'data': {'layout': self.layout, 'image': self.hand, 'handTip': self.hand_tip, 'handScale': self.hand_scale, 'sleeve': self.hand_sleeve, 'header': {'first': self.header_first, 'other': self.header_other},
+                'data': {'layout': self.layout, 'image': self.hand, 'handTip': self.hand_tip, 'handScale': self.hand_scale, 'handRotation': self.hand_rotation, 'sleeve': self.hand_sleeve, 'header': {'first': self.header_first, 'other': self.header_other},
                          'scenes': scenes, 'events': self.EV, 'captions': captions, 'spriteLibrary': self.lib},
                 'cues': [{'at': 0, 'kind': 'asset', 'image': '../assets/images/' + v['file'], 'data': {'group': k}} for k, v in self.lib['source_images'].items()]}
         from .lint import lint, panel_rhythm_issues, panel_rhythm_report, panel_exit_issues
