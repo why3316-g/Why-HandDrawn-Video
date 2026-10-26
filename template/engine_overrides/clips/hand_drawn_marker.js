@@ -162,12 +162,13 @@ CLIPS.hand_drawn_marker = (() => {
       else if (prev && t - prev.at - prev.dur < .28) { const q = (t - prev.at - prev.dur) / .28; pen = [end[0] - cam + q * 360, end[1] + q * 100]; opacity = 1 - q; } }
     if (pen && hand && pen[0] > -180 && pen[0] < L.width) {
       g.save(); g.beginPath(); g.rect(0, L.content_top, L.width, L.content_bottom - L.content_top); g.clip(); g.globalAlpha = opacity;
-      const pose=handPose(pen,L);
+      const pose=handPose(pen,L), hs=ctx.data.handScale; if (hs) pose.scale=hs;
       g.translate(...pen); g.rotate(pose.rotation); g.scale(pose.scale, pose.scale); g.translate(-tip[0], -tip[1]);
       // 宽屏直接显示素材中固定比例的手臂；不再叠加延长袖管，画板其余区域留白。
-      // 竖屏沿用原有袖管处理，避免影响旧项目的手部构图。
-      if (L.mode !== 'landscape') {
-        const a = [1253, 885], b = [1052, 1253], far = 5000;
+      // 竖屏：线稿手沿用原袖管延伸（白底+墨线盖住先画的内容）；彩色素材 sleeve=null，素材自带袖口，直接留白。
+      const sl = ctx.data.sleeve === undefined ? [[1253, 885], [1052, 1253]] : ctx.data.sleeve;
+      if (L.mode !== 'landscape' && sl) {
+        const a = sl[0], b = sl[1], far = 5000;
         g.fillStyle = BG; g.strokeStyle = INK; g.lineWidth = 3; g.beginPath(); g.moveTo(...a); g.lineTo(a[0] + far, a[1] + far); g.lineTo(b[0] + far, b[1] + far); g.lineTo(...b); g.closePath(); g.fill();
         g.beginPath(); g.moveTo(...a); g.lineTo(a[0] + far, a[1] + far); g.moveTo(...b); g.lineTo(b[0] + far, b[1] + far); g.stroke();
       }

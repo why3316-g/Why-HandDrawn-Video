@@ -12,17 +12,46 @@ PANEL = 1120
 
 class Film:
     def __init__(self, project, clock, lib_json='design/sprite-strokes-v01.json', hand=None,
-                 hand_tip=(147, 119), header_first=('', ''), header_other='', tail=1.6, fps=30, grammar='hand_drawn_marker', mode=None):
+                 hand_tip=None, header_first=('', ''), header_other='', tail=1.6, fps=30, grammar='hand_drawn_marker', mode=None):
         self.P, self.clock = Path(project), clock
         from .layout import get_layout, project_layout
         self.layout = project_layout(self.P) if mode is None else get_layout(mode)
         self.lib = json.loads((self.P / lib_json).read_text(encoding='utf-8'))
         self.EV, self.PANELS = [], []
-        self.hand = hand or ('../assets/images/marker-hand-landscape-v01.png' if self.layout['mode'] == 'landscape' else '../assets/images/marker-hand-v02.png')
-        self.hand_tip = list(hand_tip)
+        self._resolve_hand(hand, hand_tip)
         self.header_first, self.header_other = list(header_first), header_other
         self.tail, self.fps, self.grammar = tail, fps, grammar
         self.aspect = {k: v['rect'][2] / v['rect'][3] for k, v in self.lib['sprites'].items()}
+
+    # ---- 手与笔（2026-10-26 用户定稿：竖屏随机取池内一张，全片同一张）----
+    LEGACY_SLEEVE = [[1253, 885], [1052, 1253]]      # marker-hand-v02 的袖口延伸线（白底+墨线），只给旧线稿手用
+
+    def _resolve_hand(self, hand, hand_tip):
+        """素材取自 design/config.json 的 hand，参数只做强制覆盖。笔尖/缩放/袖管几何跟着素材走：
+        assets/images/hand-meta.json 由 hand_pool.py 写入；竖屏彩色素材 sleeve=null，不画袖管延伸。
+        宽屏仍用已批准的短手素材 marker-hand-landscape-v01.png（.18），不受竖屏素材池影响。"""
+        cfg = {}
+        cpath = self.P / 'design/config.json'
+        if cpath.is_file():
+            try: cfg = json.loads(cpath.read_text(encoding='utf-8'))
+            except Exception: cfg = {}
+        landscape = self.layout['mode'] == 'landscape'
+        name = hand or (cfg.get('hand_landscape') if landscape else cfg.get('hand'))
+        name = Path(name).name if name else ('marker-hand-landscape-v01.png' if landscape else 'marker-hand-v02.png')
+        tip = [147, 119]
+        scale = .18 if landscape else .34
+        sleeve = None if landscape else self.LEGACY_SLEEVE
+        meta_path = self.P / 'assets/images/hand-meta.json'
+        if not landscape and meta_path.is_file():
+            try: meta = json.loads(meta_path.read_text(encoding='utf-8'))
+            except Exception: meta = {}
+            if meta.get('file') == name:      # 只认当前这双手的参数，换图后不会错用旧笔尖
+                tip = list(meta.get('tip') or tip)
+                scale = float(meta.get('scale') or scale)
+                sleeve = meta.get('sleeve')
+        if hand_tip: tip = list(hand_tip)
+        self.hand = '../assets/images/' + name
+        self.hand_tip, self.hand_scale, self.hand_sleeve = tip, scale, sleeve
 
     # ---- 时间 ----
     def S(self, phrase, nth=0, last=False): return self.clock.T(phrase, nth, last)[0]
@@ -99,7 +128,7 @@ class Film:
             scenes.append({'index': i, 'id': pid, 'start': round(max(0, st), 3), 'end': round(en, 3)})
         dur = round((self.clock.end + self.tail) * self.fps) / self.fps
         spec = {'grammar': self.grammar, 'duration': dur, 'fps': self.fps, 'width': self.layout['width'], 'height': self.layout['height'],
-                'data': {'layout': self.layout, 'image': self.hand, 'handTip': self.hand_tip, 'header': {'first': self.header_first, 'other': self.header_other},
+                'data': {'layout': self.layout, 'image': self.hand, 'handTip': self.hand_tip, 'handScale': self.hand_scale, 'sleeve': self.hand_sleeve, 'header': {'first': self.header_first, 'other': self.header_other},
                          'scenes': scenes, 'events': self.EV, 'captions': captions, 'spriteLibrary': self.lib},
                 'cues': [{'at': 0, 'kind': 'asset', 'image': '../assets/images/' + v['file'], 'data': {'group': k}} for k, v in self.lib['source_images'].items()]}
         from .lint import lint, panel_rhythm_issues, panel_rhythm_report, panel_exit_issues

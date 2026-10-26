@@ -9,7 +9,7 @@ import zipfile
 from verify_bundle import ROOT, bundle_files, verify
 
 
-PUBLIC_EXCLUDE = ('assets/brand/', 'assets/characters/', 'assets/layouts/', 'examples/', 'public/')
+PUBLIC_EXCLUDE = ('assets/brand/', 'assets/characters/', 'assets/layouts/', 'assets/hands/', 'examples/', 'public/')   # assets/hands/ 是个人手部素材池，公开版不带图，new_project 自动退回 marker-hand-v02.png
 PUBLIC_REPLACED = ('README.md', 'AGENTS.md', 'CLAUDE.md')          # 个人版文档，公开版用 public/ 里的同名通用版
 TEXT_SUFFIX = {'.md', '.py', '.json', '.txt', '.yaml', '.yml', '.js', '.html', '.css', '.env', '.example', '.toml', '.cfg'}
 
