@@ -6,8 +6,11 @@
 - 轮着用：最近用过的顺序记在 <工作区>/assets/hand-usage.json，取图时把"本轮还没用过的之外的"排除，
   池里 8 张就等于 8 支片一轮、顺序随机；池里只剩一张时直接用那张。
 - 新增图片：直接丢进池目录 → `python scripts/hand_pool.py --sync` 自动量笔尖、写清单 → 之后自动参与随机。
-- 新图必须与现有 8 张同构图：透明底、笔尖朝左上、袖口朝右下、只有一只手一支笔、画布约 1100–1550 px。
+- 新图必须与现有 8 张同构图：透明底、笔尖朝左上、袖口朝右下（前臂与水平线 45°±12°）、
+  只有一只手一支笔、画布约 1100–1550 px。
   构图不同（笔尖不在左上角、多手多笔、白底不透明）时，要在清单里手写 tip/scale，或另开 pool。
+- 角度口径（2026-10-26 用户定 A 方案）：**固定 45°，不按素材原角**。渲染时把每张图绕笔尖旋到 45°，
+  转幅 = |45° − 实测手臂轴|；>12° 报警、>15° 拒绝入片（此时袖口会被甩离画面，应重生成）。
 
 用法
   python scripts/hand_pool.py --list                 列出池内图片与参数
@@ -35,7 +38,22 @@ POOL_NAME = 'hand-pool-v01'
 MANIFEST = 'hand-pool-v01.json'
 BASELINE = 0.34 * math.hypot(1254, 1254)      # 样板 marker-hand-v02：1254² 对角、批准缩放 .34
 ARM_TARGET = 45.0                            # 手臂（袖口方向）统一归一到右下 45°，见 HAND_POOL.md
+ROT_WARN = 12.0                              # 转幅超过 12°：可用但报警，建议重生成
+ROT_MAX = 15.0                               # 转幅超过 15°：拒绝入池（袖口会被甩出画面或压住人物）
 USAGE = Path('assets/hand-usage.json')
+
+
+def rotation_check(entry):
+    """转幅质检门（2026-10-26 用户定 A 方案：固定 45°，不按素材原角）。
+    返回 (level, msg)，level ∈ ok / warn / reject。转幅 = |45° − 素材实测手臂轴|。"""
+    r = abs(float(entry.get('rotation') or 0.0))
+    arm = entry.get('arm_angle')
+    tail = f'（素材原角 {arm}°）' if arm is not None else ''
+    if r > ROT_MAX:
+        return 'reject', f'转幅 {r:.1f}° 超过 {ROT_MAX:.0f}° 上限{tail}：硬转会把手/袖口甩离画面，建议重生成'
+    if r > ROT_WARN:
+        return 'warn', f'转幅 {r:.1f}° 超过 {ROT_WARN:.0f}° 建议值{tail}：可用，但建议重生成以减小变形'
+    return 'ok', ''
 
 
 def pool_dir(skill=None):
@@ -97,6 +115,7 @@ def entries(skill=None):
         e.setdefault('scale', round(BASELINE / math.hypot(*e['size']), 3))
         e.setdefault('rotation', 0.0)      # 缺参数时按素材原姿态（多为 45° 右下），不硬旋 -45°
         e.setdefault('sleeve', None)
+        e['gate'], e['gate_msg'] = rotation_check(e)
         e['sha256'] = sha256_of(p)
         out.append(e)
     return out
@@ -148,13 +167,20 @@ def record_use(workspace, entry):
 
 def pick(skill=None, workspace=None, forced=None):
     """一片一双手：在"本轮还没用过"的图里随机取一张。池里 8 张时等于轮着用，顺序随机。
-    forced 可用全名或前缀（如 03）强制指定。"""
-    pool = entries(skill)
-    if not pool:
+    转幅超 15° 的图不参与（硬转会把手甩离画面）；forced 可用全名或前缀（如 03）强制指定。"""
+    everything = entries(skill)
+    if not everything:
         raise SystemExit(f'手部素材池为空：{pool_dir(skill)}。放 1 张以上透明底 PNG 再建项目。')
+    pool = [e for e in everything if e.get('gate') != 'reject']
+    if not pool:
+        detail = '；'.join(f"{e['file']} {e['gate_msg']}" for e in everything)
+        raise SystemExit(f'池内图片转幅全部超限，没有可用的手：{detail}。重生成后再跑 --sync。')
     if forced:
         hit = [e for e in pool if e['file'] == forced] or [e for e in pool if e['file'].startswith(forced)]
         if not hit:
+            bad = [e for e in everything if e['file'] == forced or e['file'].startswith(forced)]
+            if bad:
+                raise SystemExit(f'{forced} 转幅超限，不能入片：{bad[0]["gate_msg"]}')
             raise SystemExit(f'池里没有 {forced}；可选：' + '、'.join(e['file'] for e in pool))
         return hit[0]
     skip = set(recent_used(workspace, len(pool) - 1))
@@ -164,6 +190,9 @@ def pick(skill=None, workspace=None, forced=None):
 
 def install(project, entry):
     """把选中的手装进项目：素材本体 + hand-meta.json（笔尖/缩放/旋转/袖管几何）。"""
+    level, msg = rotation_check(entry)
+    if level == 'reject':
+        raise SystemExit(f'{entry.get("file")} 转幅超限，不能装进项目：{msg}')
     images = Path(project) / 'assets/images'
     images.mkdir(parents=True, exist_ok=True)
     shutil.copy(entry['path'], images / entry['file'])
@@ -185,14 +214,19 @@ def sync(skill=None, bundle=True):
             continue
         m = measure(p)
         prev = old.get(p.name, {})
+        level, _ = rotation_check(m)
         images.append({'file': p.name, 'size': m['size'], 'tip': m['tip'], 'arm_angle': m['arm_angle'],
-                       'rotation': m['rotation'], 'scale': prev.get('scale', m['scale']),
+                       'rotation': m['rotation'], 'gate': level,
+                       'scale': prev.get('scale', m['scale']),
                        'sleeve': prev.get('sleeve'),
                        'sha256': sha256_of(p), 'source': prev.get('source', f'{POOL_REL.as_posix()}/{p.name}')})
     data = {'schema': 1, 'pool': POOL_NAME, 'updated': datetime.now(timezone.utc).isoformat(timespec='seconds'),
             'rule': '只用本目录根下的 PNG；不递归、不用子目录；每片随机一张、全片同一张',
             'baseline': {'reference': 'assets/marker-hand-v02.png', 'scale': 0.34, 'diagonal': 1773,
-                         'arm_angle': 45, 'note': '手臂（袖口）轴向统一归一到右下 45°，rotation 按图实测'},
+                         'arm_angle': ARM_TARGET,
+                         'gate': {'warn_over': ROT_WARN, 'reject_over': ROT_MAX},
+                         'note': f'手臂（袖口）轴向统一归一到右下 {ARM_TARGET:.0f}°，按图实测 rotation；'
+                                 f'转幅 >{ROT_WARN:.0f}° 报警、>{ROT_MAX:.0f}° 不入片（见 HAND_POOL.md）'},
             'images': images}
     (d / MANIFEST).write_text(json.dumps(data, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
     if bundle and (d.parents[2] / 'BUNDLE_MANIFEST.json').is_file():
@@ -211,16 +245,29 @@ def main():
     ap.add_argument('--workspace', default=None, help='视频工作区根（读写 hand-usage.json）')
     ap.add_argument('--hand', default=None, help='指定池内文件全名或前缀，跳过随机')
     a = ap.parse_args()
+    rc = 0
     if a.sync:
         imgs = sync(a.skill)
-        print(f'已同步 {len(imgs)} 张：' + '、'.join(i['file'] for i in imgs))
+        ok = [i for i in imgs if i.get('gate') == 'ok']
+        warn = [i for i in imgs if i.get('gate') == 'warn']
+        bad = [i for i in imgs if i.get('gate') == 'reject']
+        print(f'已同步 {len(imgs)} 张：合格 {len(ok)}、警告 {len(warn)}、不可入片 {len(bad)}')
+        for i in warn:
+            print('  ! ' + i['file'] + '：' + rotation_check(i)[1])
+        for i in bad:
+            print('  × ' + i['file'] + '：' + rotation_check(i)[1])
+        if bad:
+            print(f'有 {len(bad)} 张转幅超过 {ROT_MAX:.0f}°，已拒绝入片；重生成后再 sync。', file=sys.stderr)
+            rc = 1
     if a.list or not (a.pick or a.sync):
         for e in entries(a.skill):
-            print(f"{e['file']}  {e['size'][0]}×{e['size'][1]}  tip={e['tip']}  scale={e['scale']}")
+            mark = {'ok': ' ', 'warn': '!', 'reject': '×'}[e['gate']]
+            print(f"{mark} {e['file']}  {e['size'][0]}×{e['size'][1]}  tip={e['tip']}  "
+                  f"手臂={e.get('arm_angle')}°  转={e['rotation']:+.1f}°  scale={e['scale']}")
     if a.pick:
         e = pick(a.skill, a.workspace, a.hand)
-        print(json.dumps({k: e[k] for k in ('file', 'tip', 'scale', 'sleeve')}, ensure_ascii=False))
-    return 0
+        print(json.dumps({k: e[k] for k in ('file', 'tip', 'scale', 'rotation', 'sleeve')}, ensure_ascii=False))
+    return rc
 
 
 if __name__ == '__main__':

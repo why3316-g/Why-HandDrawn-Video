@@ -7,6 +7,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from unittest import mock
 
 SKILL = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SKILL / 'scripts'))
@@ -60,6 +61,7 @@ class RealPoolTests(unittest.TestCase):
             self.assertTrue(0 <= x < w and 0 <= y < h, f"{e['file']} 笔尖越界")
             self.assertTrue(.25 <= e['scale'] <= .45, f"{e['file']} 缩放异常：{e['scale']}")
             self.assertEqual(e['sha256'], hand_pool.sha256_of(Path(e['path'])))
+            self.assertNotEqual(e['gate'], 'reject', f"{e['file']} 转幅超限，不该留在池里：{e['gate_msg']}")
 
     def test_manifest_matches_disk(self):
         names = [e['file'] for e in self.entries]
@@ -105,6 +107,55 @@ class PoolBehaviourTests(unittest.TestCase):
             skill = make_fake_skill(Path(tmp) / 'skill')
             for e in hand_pool.entries(skill):
                 self.assertAlmostEqual(e['arm_angle'] + e['rotation'], hand_pool.ARM_TARGET, places=1)
+
+
+class RotationGateTests(unittest.TestCase):
+    """A 方案（2026-10-26 用户定）：固定 45°，不按素材原角；转幅越大变形越大，设两级门。"""
+
+    def test_thresholds(self):
+        cases = [(0.0, 'ok'), (5.4, 'ok'), (12.0, 'ok'), (12.1, 'warn'),
+                 (15.0, 'warn'), (15.1, 'reject'), (-10.4, 'ok'), (-16.0, 'reject')]
+        for rot, want in cases:
+            got = hand_pool.rotation_check({'rotation': rot, 'arm_angle': 45 - rot})[0]
+            self.assertEqual(got, want, f'转幅 {rot}° 应为 {want}，实际 {got}')
+
+    def test_message_carries_arm_angle_for_regeneration(self):
+        level, msg = hand_pool.rotation_check({'rotation': 13.2, 'arm_angle': 31.8})
+        self.assertEqual(level, 'warn')
+        self.assertIn('31.8', msg, '要能看出素材原本多少度，才知道重生成往哪偏')
+
+    def test_pick_skips_rejected_and_says_why_when_all_fail(self):
+        bad = [{'file': 'x.png', 'rotation': 20.0, 'arm_angle': 25.0,
+                'gate': 'reject', 'gate_msg': '转幅 20.0° 超过 15° 上限'}]
+        with mock.patch.object(hand_pool, 'entries', return_value=bad):
+            with self.assertRaises(SystemExit) as cm:
+                hand_pool.pick()
+            self.assertIn('转幅', str(cm.exception))
+
+    def test_pick_skips_rejected_but_keeps_the_rest(self):
+        good = {'file': 'g.png', 'rotation': 2.0, 'arm_angle': 43.0, 'gate': 'ok', 'gate_msg': ''}
+        bad = {'file': 'x.png', 'rotation': 20.0, 'arm_angle': 25.0, 'gate': 'reject', 'gate_msg': '超限'}
+        with mock.patch.object(hand_pool, 'entries', return_value=[bad, good]):
+            for _ in range(20):
+                self.assertEqual(hand_pool.pick()['file'], 'g.png', '超限的图绝不能参与取图')
+            with self.assertRaises(SystemExit):
+                hand_pool.pick(forced='x.png')
+
+    def test_install_refuses_over_limit_hand(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = make_project(Path(tmp) / 'proj')
+            with self.assertRaises(SystemExit):
+                hand_pool.install(p, {'file': 'x.png', 'path': str(LEGACY_HAND),
+                                      'rotation': 18.0, 'gate': 'reject', 'gate_msg': '超限'})
+            self.assertFalse((p / 'assets/images/hand-meta.json').exists(), '被拒的手不得留下半成品')
+
+    def test_sync_marks_gate_in_manifest(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            skill = make_fake_skill(Path(tmp) / 'skill')
+            hand_pool.sync(skill, bundle=False)
+            saved = json.loads((Path(skill) / hand_pool.POOL_REL / hand_pool.MANIFEST).read_text(encoding='utf-8'))
+            self.assertEqual([i['gate'] for i in saved['images']], ['ok', 'ok'])
+            self.assertEqual(saved['baseline']['gate'], {'warn_over': 12.0, 'reject_over': 15.0})
 
     def test_dsl_uses_pool_geometry(self):
         with tempfile.TemporaryDirectory() as tmp:
