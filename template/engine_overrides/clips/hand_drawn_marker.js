@@ -20,7 +20,37 @@ CLIPS.hand_drawn_marker = (() => {
   }
   function addLine(e, off) {
     const pts = e.p.map(([x, y]) => [x + off, y]), p = e.curved === false ? pts : DG.hand(pts, { amp: .65, seed: e.seed, per: 7 }), cum = DG.cum(p);
-    strokes.push({ kind: 'line', p, cum, len: cum.at(-1), at: e.at, dur: e.dur, color: e.color || INK, width: e.width || 6, index: e.index });
+    const pressure = Array.isArray(e.pressure) && e.pressure.length === p.length ? e.pressure : null;
+    const accents = (e.accents || []).map(a => { const ap = a.p.map(([x,y]) => [x + off,y]); const ac = DG.cum(ap); return {...a,p:ap,cum:ac,len:ac.at(-1)}; });
+    strokes.push({ kind: 'line', p, cum, len: cum.at(-1), at: e.at, dur: e.dur, color: e.color || INK, width: e.width || 6, pressure, dryBrush: !!e.dryBrush, accents, index: e.index });
+  }
+  function drawPressureLine(g, s, q) {
+    const amount = s.len * q, tip = DG.pointAt(s.p, s.cum, amount);
+    for (let i = 1; i < s.p.length && s.cum[i - 1] < amount; i++) {
+      const a = s.p[i - 1], b = s.p[i], seg = s.cum[i] - s.cum[i - 1];
+      if (!seg) continue;
+      const f = Math.min(1, (amount - s.cum[i - 1]) / seg), end = [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
+      const w = Math.max(.35, (s.pressure[i - 1] + s.pressure[i]) / 2);
+      if (s.dryBrush && w > 1.5) {
+        const nx = -(b[1] - a[1]) / seg, ny = (b[0] - a[0]) / seg;
+        // 核心笔墨叠上细丝：保留有力的下沿与真实飞白的间隙。
+        g.lineWidth = Math.max(.5, w * .55); g.beginPath(); g.moveTo(...a); g.lineTo(...end); g.stroke();
+        for (let j = 0; j < 9; j++) {
+          // 以固定相位画稀疏笔丝，逐帧确定；保留白纸飞白，不覆盖别的内容。
+          if (Math.sin(i * .17 + j * 2.31) < -.77) continue;
+          const shift = (j - 4) * w * .105;
+          g.lineWidth = Math.max(.4, w * (.075 + .018 * Math.sin(j * 2.4 + i * .045)));
+          g.beginPath(); g.moveTo(a[0] + nx * shift, a[1] + ny * shift); g.lineTo(end[0] + nx * shift, end[1] + ny * shift); g.stroke();
+        }
+      } else {
+        g.lineWidth = w; g.beginPath(); g.moveTo(...a); g.lineTo(...end); g.stroke();
+      }
+    }
+    for (const a of s.accents) {
+      const aq = U.clamp((q - a.start) / Math.max(.0001, a.end - a.start));
+      if (aq > 0) { g.lineWidth = a.width; DG.drawPartial(g, a.p, a.cum, a.len * aq); }
+    }
+    return tip;
   }
   function isolateForComposite(image, rect) {            // 取 rect 区域，把与边缘相连的近白色背景去掉（衣服里面的白色保留）
     const cv = document.createElement('canvas'); cv.width = rect[2]; cv.height = rect[3]; const c = cv.getContext('2d'); c.drawImage(image, ...rect, 0, 0, cv.width, cv.height);
@@ -146,7 +176,7 @@ CLIPS.hand_drawn_marker = (() => {
       const q = U.clamp((t - s.at) / s.dur); g.strokeStyle = s.color; g.lineWidth = s.width || 6; g.lineCap = 'round'; g.lineJoin = 'round';
       if (s.kind === 'media') { g.globalAlpha=q; g.drawImage(s.image,s.x,s.y,s.w,s.h); g.restore(); continue; }
       if (s.fade) { g.globalAlpha = q; g.font = `${s.size}px "LXGWWenKai-500"`; g.fillStyle = s.color; g.fillText(s.str, s.x, s.y); g.restore(); continue; }   // 渐显文字：不用笔写，不进笔的轨迹
-      const sr = s.kind === 'sprite' ? drawSprite(g, s, q) : null; const p = sr ? sr.tip : s.kind === 'text' ? drawText(g, s, q) : DG.drawPartial(g, s.p, s.cum, s.len * q); if (q < 1) activeTip = p; g.restore(); }
+      const sr = s.kind === 'sprite' ? drawSprite(g, s, q) : null; const p = sr ? sr.tip : s.kind === 'text' ? drawText(g, s, q) : s.pressure ? drawPressureLine(g, s, q) : DG.drawPartial(g, s.p, s.cum, s.len * q); if (q < 1) activeTip = p; g.restore(); }
     if (L.mode === 'portrait') for (const s of scenes) { if (t >= s.start && t < s.end && Math.abs(s.index * PANEL - cam) < L.width + 220) ambient(g, t, s); }
     g.restore();
     if (L.mode === 'landscape') { g.save(); g.beginPath(); g.rect(0, 0, L.width, L.height); g.clip(); g.translate(-cam, 0); ambient(g, t, sc); g.restore(); }

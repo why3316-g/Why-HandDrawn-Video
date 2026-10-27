@@ -119,13 +119,15 @@ class Film:
     def ring(self, i, s, x, y, size, at, dur=.4, color=OR, style='normal'):
         """圈住文字：normal 常规、key 关键结论、special 特殊；y 为文字基线。"""
         from .lint import text_w
-        from .ring_style import ring_strokes
+        from .ring_style import ring_geometry
         w = text_w(s, size)
-        elapsed = 0.0
-        for n, (points, line_width, fraction) in enumerate(ring_strokes(w, size, style)):
-            self.line(i, [(x + px, y + py) for px, py in points], at + elapsed, dur * fraction,
-                      color, line_width, False, 'ring:' + s if n == 0 else 'ring-detail')
-            elapsed += dur * fraction
+        points, widths, details, brush = ring_geometry(w, size, style)
+        self.line(i, [(x + px, y + py) for px, py in points], at, dur, color, max(widths), False, 'ring:' + s)
+        self.EV[-1]['pressure'] = [round(v, 2) for v in widths]
+        self.EV[-1]['dryBrush'] = brush
+        self.EV[-1]['accents'] = [{'p': [[round(x + px, 1), round(y + py, 1)] for px, py in pts],
+                                   'width': round(line_width, 2), 'start': start, 'end': end}
+                                  for pts, line_width, start, end in details]
 
     def phone(self, i, x, y, w, h, at):
         self.box(i, x, y, w, h, at, .4); self.line(i, [(x + 15, y + 45), (x + w - 15, y + 45)], at + .43, .14)
