@@ -117,17 +117,15 @@ class Film:
         self.line(i, self.ell(cx, cy, rx, ry), at, .35, color, 5, True, 'pop'); self.text(i, s, cx - len(s) * size / 2, cy + size * .3, size, at + .3, .3, color)
 
     def ring(self, i, s, x, y, size, at, dur=.4, color=OR, style='normal'):
-        """圈住文字：normal 常规、key 关键结论、special 特殊；y 为文字基线。"""
+        """02 常规默认；03 key 强调关键结论，special 仅兼容为 03。"""
         from .lint import text_w
-        from .ring_style import ring_geometry
-        w = text_w(s, size)
-        points, widths, details, brush = ring_geometry(w, size, style)
-        self.line(i, [(x + px, y + py) for px, py in points], at, dur, color, max(widths), False, 'ring:' + s)
-        self.EV[-1]['pressure'] = [round(v, 2) for v in widths]
-        self.EV[-1]['dryBrush'] = brush
-        self.EV[-1]['accents'] = [{'p': [[round(x + px, 1), round(y + py, 1)] for px, py in pts],
-                                   'width': round(line_width, 2), 'start': start, 'end': end}
-                                  for pts, line_width, start, end in details]
+        from .ring_style import ring_reference
+        if not math.isfinite(dur) or dur <= 0:
+            raise ValueError('圈画时长必须为正数')
+        ref = ring_reference(text_w(s, size), size, style)
+        self.line(i, [(x + px, y + py) for px, py in ref['points']], at, dur, color, 1, False, 'ring:' + s)
+        bx, by, w, h = ref['box']
+        self.EV[-1].update(ringAsset=ref['style'], ringBox=[x + bx, y + by, w, h], ringStart=ref['start'])
 
     def phone(self, i, x, y, w, h, at):
         self.box(i, x, y, w, h, at, .4); self.line(i, [(x + 15, y + 45), (x + w - 15, y + 45)], at + .43, .14)
@@ -144,6 +142,8 @@ class Film:
                 'data': {'layout': self.layout, 'image': self.hand, 'handTip': self.hand_tip, 'handScale': self.hand_scale, 'handRotation': self.hand_rotation, 'sleeve': self.hand_sleeve, 'header': {'first': self.header_first, 'other': self.header_other},
                          'scenes': scenes, 'events': self.EV, 'captions': captions, 'spriteLibrary': self.lib},
                 'cues': [{'at': 0, 'kind': 'asset', 'image': '../assets/images/' + v['file'], 'data': {'group': k}} for k, v in self.lib['source_images'].items()]}
+        from .ring_style import ring_asset_cues
+        spec['cues'].extend(ring_asset_cues(self.EV, self.P))
         from .lint import lint, panel_rhythm_issues, panel_rhythm_report, panel_exit_issues
         errs, warns = lint(self.EV, layout=self.layout)
         errs.extend(panel_rhythm_issues(self.EV, scenes))

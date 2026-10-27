@@ -62,6 +62,10 @@ def lint(events, panels=None, layout=None):
             if layout['mode'] == 'landscape' and (lb[0] < left or lb[2] > right or lb[1] < layout['content_top'] or lb[3] > layout['content_bottom']):
                 errs.append(f'板{i} 线条越出宽屏画板，会被裁切')
             if tag.startswith('ring:'):
+                if ln.get('ringBox'):
+                    rx, ry, rw, rh = ln['ringBox']
+                    if rx < left or rx + rw > right or ry < layout['content_top'] or ry + rh > layout['content_bottom']:
+                        errs.append(f'板{i} 圈画原稿越出画板安全区，请缩短短语、缩小字号或调整位置')
                 s = tag[5:]
                 tgt = [b for t, b in tb if t['str'] == s]
                 if not tgt:

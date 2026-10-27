@@ -64,6 +64,7 @@ print('render.py 补丁：', engine_fixes.patch_render(P / 'engine/render.py'))
 (P / 'engine/clips').mkdir(exist_ok=True)
 shutil.copy(SKILL / 'template/engine_overrides/clips/hand_drawn_marker.js', P / 'engine/clips/hand_drawn_marker.js')
 shutil.copytree(SKILL / 'scripts/hdv', P / 'design/hdv', ignore=shutil.ignore_patterns('__pycache__'))
+shutil.copytree(SKILL / 'assets/ring-styles', P / 'assets/images/ring-styles')
 for f in ('config.json', 'film.py', 'shots.json', 'cast.json', 'breaks.json'):
     shutil.copy(SKILL / 'template/design' / f, P / 'design' / f)
 for f in ('BRIEF.md', 'narration.txt', 'title.txt'):

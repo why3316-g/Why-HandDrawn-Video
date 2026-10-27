@@ -10,7 +10,7 @@ CLIPS.hand_drawn_marker = (() => {
   const LEGACY = {mode:'portrait',width:1080,height:1920,panel_width:1120,content_top:285,content_bottom:1455,
     separator_y:1430,separator_x:[120,925],clock:[932,322,24],caption_top:1438,caption_height:80,caption_baseline:1494,
     caption_size:52,caption_small_size:48,header_x:85,header_first_y:[245,308],header_other_y:250,pen_enter_x:1280,pen_enter_bottom:1350};
-  let strokes = [], hand, tip = [147, 119], scenes = [], spriteMeta = {}, spriteSources = {}, spriteBuffers = {};
+  let ringImages = {}, ringTints = {}, strokes = [], hand, tip = [147, 119], scenes = [], spriteMeta = {}, spriteSources = {}, spriteBuffers = {};
   const smooth = (a, b, t) => { const p = U.clamp((t - a) / (b - a)); return p * p * (3 - 2 * p); };
   function handPose(pen, layout) {
     // 手臂轴向：竖屏与宽屏同一套（2026-10-26 用户定稿）——从右下斜向上约 45°，不再按画幅分两套。
@@ -22,7 +22,7 @@ CLIPS.hand_drawn_marker = (() => {
     const pts = e.p.map(([x, y]) => [x + off, y]), p = e.curved === false ? pts : DG.hand(pts, { amp: .65, seed: e.seed, per: 7 }), cum = DG.cum(p);
     const pressure = Array.isArray(e.pressure) && e.pressure.length === p.length ? e.pressure : null;
     const accents = (e.accents || []).map(a => { const ap = a.p.map(([x,y]) => [x + off,y]); const ac = DG.cum(ap); return {...a,p:ap,cum:ac,len:ac.at(-1)}; });
-    strokes.push({ kind: 'line', p, cum, len: cum.at(-1), at: e.at, dur: e.dur, color: e.color || INK, width: e.width || 6, pressure, dryBrush: !!e.dryBrush, accents, index: e.index });
+    strokes.push({ kind: 'line', p, cum, len: cum.at(-1), at: e.at, dur: e.dur, color: e.color || INK, width: e.width || 6, pressure, dryBrush: !!e.dryBrush, accents, ringAsset: e.ringAsset, ringBox: e.ringBox ? [e.ringBox[0]+off,e.ringBox[1],e.ringBox[2],e.ringBox[3]] : null, ringStart: e.ringStart, index: e.index });
   }
   function drawPressureLine(g, s, q) {
     const amount = s.len * q, tip = DG.pointAt(s.p, s.cum, amount);
@@ -51,6 +51,37 @@ CLIPS.hand_drawn_marker = (() => {
       if (aq > 0) { g.lineWidth = a.width; DG.drawPartial(g, a.p, a.cum, a.len * aq); }
     }
     return tip;
+  }
+  // 原笔迹与笔尖共享同一角度进度，完成时显示完整原图；旧事件仍走原线条逻辑。
+  function ringTip(s, q) {
+    const t = U.clamp(q) * (s.p.length - 1), i = Math.min(s.p.length - 2, Math.floor(t)), f = t - i;
+    return [s.p[i][0] + (s.p[i+1][0] - s.p[i][0]) * f, s.p[i][1] + (s.p[i+1][1] - s.p[i][1]) * f];
+  }
+  function drawOriginalRing(g, s, q) {
+    let image = ringImages[s.ringAsset];
+    if (!image) throw new Error('缺少已审核圈画原稿 ' + s.ringAsset);
+    if (q <= 0) return;
+    // 橙色保留原稿 RGB；历史显式墨色调用按原笔迹透明度着色，不退回规则椭圆。
+    if (s.color !== OR) {
+      const key = s.ringAsset + ':' + s.color;
+      if (!ringTints[key]) {
+        const cv = document.createElement('canvas'); cv.width = image.width; cv.height = image.height;
+        const c = cv.getContext('2d'); c.drawImage(image, 0, 0);
+        const im = c.getImageData(0, 0, cv.width, cv.height), a = im.data;
+        for (let k=0;k<a.length;k+=4) a[k+3] *= (255 - Math.min(a[k],a[k+1],a[k+2])) / 255;
+        c.putImageData(im,0,0); c.globalCompositeOperation='source-in'; c.fillStyle=s.color; c.fillRect(0,0,cv.width,cv.height);
+        ringTints[key] = cv;
+      }
+      image = ringTints[key];
+    }
+    const [x,y,w,h] = s.ringBox, cx=x+w/2, cy=y+h/2;
+    g.save();
+    if (q < 1) {
+      g.beginPath(); g.moveTo(cx,cy);
+      g.ellipse(cx,cy,w*2,h*2,0,s.ringStart,s.ringStart+q*Math.PI*2,false);
+      g.closePath(); g.clip();
+    }
+    g.globalCompositeOperation='multiply'; g.drawImage(image,x,y,w,h); g.restore();
   }
   function isolateForComposite(image, rect) {            // 取 rect 区域，把与边缘相连的近白色背景去掉（衣服里面的白色保留）
     const cv = document.createElement('canvas'); cv.width = rect[2]; cv.height = rect[3]; const c = cv.getContext('2d'); c.drawImage(image, ...rect, 0, 0, cv.width, cv.height);
@@ -110,6 +141,11 @@ CLIPS.hand_drawn_marker = (() => {
     return { tip: [s.x + tipP[0] * s.scale, s.y + tipP[1] * s.scale] };
   }
   function init(ctx) {
+    ringImages = {}; ringTints = {};
+    for (const cue of ctx.cues) if (cue.kind === 'ring_reference') {
+      const image=ctx.IMG[cue.image]; if (!image) throw new Error('圈画原稿加载失败 '+cue.image);
+      ringImages[cue.data.style] = image;
+    }
     L = ctx.data.layout || LEGACY; PANEL = L.panel_width;
     if (ctx.W !== L.width || ctx.H !== L.height) throw new Error('画幅与布局不一致，请重建事件表');
     spriteMeta = ctx.data.spriteLibrary.sprites; spriteSources = {}; spriteBuffers = {};
@@ -171,12 +207,18 @@ CLIPS.hand_drawn_marker = (() => {
     g.scale(ctx.W / L.width, ctx.W / L.width); g.fillStyle = BG; g.fillRect(0, 0, L.width, L.height);
     const cam = camera(t), sc = scenes.filter(s => s.start <= t).at(-1) || scenes[0];
     g.save(); g.beginPath(); g.rect(0, L.content_top, L.width, L.content_bottom - L.content_top); g.clip(); g.translate(-cam, 0); let activeTip = null;
+    // 圈画位于文字下层；每块画板独立裁切，不能覆盖新文字或泄漏到相邻板。
+    for (const s of strokes) {
+      if (!s.ringAsset || t < s.at || s.index * PANEL - cam > L.width || (s.index + 1) * PANEL - cam < 0) continue;
+      g.save(); g.beginPath(); g.rect(s.index*PANEL,L.content_top,L.width,L.content_bottom-L.content_top); g.clip();
+      drawOriginalRing(g,s,U.clamp((t-s.at)/s.dur)); g.restore();
+    }
     for (const s of strokes) { if (t < s.at || s.index * PANEL - cam > L.width || (s.index + 1) * PANEL - cam < 0) continue;
       g.save(); g.beginPath(); g.rect(s.index * PANEL, L.content_top, L.width, L.content_bottom - L.content_top); g.clip();   // 每笔只画在自己的画板内，越界部分不泄漏到相邻画板
       const q = U.clamp((t - s.at) / s.dur); g.strokeStyle = s.color; g.lineWidth = s.width || 6; g.lineCap = 'round'; g.lineJoin = 'round';
       if (s.kind === 'media') { g.globalAlpha=q; g.drawImage(s.image,s.x,s.y,s.w,s.h); g.restore(); continue; }
       if (s.fade) { g.globalAlpha = q; g.font = `${s.size}px "LXGWWenKai-500"`; g.fillStyle = s.color; g.fillText(s.str, s.x, s.y); g.restore(); continue; }   // 渐显文字：不用笔写，不进笔的轨迹
-      const sr = s.kind === 'sprite' ? drawSprite(g, s, q) : null; const p = sr ? sr.tip : s.kind === 'text' ? drawText(g, s, q) : s.pressure ? drawPressureLine(g, s, q) : DG.drawPartial(g, s.p, s.cum, s.len * q); if (q < 1) activeTip = p; g.restore(); }
+      const sr = s.kind === 'sprite' ? drawSprite(g, s, q) : null; const p = sr ? sr.tip : s.kind === 'text' ? drawText(g, s, q) : s.ringAsset ? ringTip(s, q) : s.pressure ? drawPressureLine(g, s, q) : DG.drawPartial(g, s.p, s.cum, s.len * q); if (q < 1) activeTip = p; g.restore(); }
     if (L.mode === 'portrait') for (const s of scenes) { if (t >= s.start && t < s.end && Math.abs(s.index * PANEL - cam) < L.width + 220) ambient(g, t, s); }
     g.restore();
     if (L.mode === 'landscape') { g.save(); g.beginPath(); g.rect(0, 0, L.width, L.height); g.clip(); g.translate(-cam, 0); ambient(g, t, sc); g.restore(); }

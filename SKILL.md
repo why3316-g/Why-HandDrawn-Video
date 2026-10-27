@@ -34,7 +34,7 @@ description: 把标题和口播稿制作成白纸线稿、橙色强调、马克�
 | 环节 | 必读 |
 |---|---|
 | 动画方法、引擎与事件表 | `references/ENGINE_GUIDE.md`、`STYLE_SPEC.md`、`LAYOUT_LIBRARY.md`；节奏手感与易错点见 `WHITEBOARD_GRAMMAR_Y3.md`、`CRAFT_LESSONS.md`（公开版不带样板案例，事件表写法见这些文件与 `template/design/film.py`） |
-| 关键词圈画 | `references/RING_STYLE.md`：02 常规、01 关键结论、03 特殊标注；使用对应 ring 样式并逐帧检查 |
+| 关键词圈画 | `references/RING_STYLE.md`：仅 02 常规默认、03 强调关键结论；01 停用。使用随包原笔迹与对应 ring 样式，并检查断口起笔和收尾 |
 | 网站宽屏、文章改口播、网站交付 | `references/LANDSCAPE_SPEC.md`（仅 landscape） |
 | 开头与画板安全 | `references/OPENING_SPEC.md` |
 | 全文配音（火山或免费微软）与私密配置 | `references/workspace/AUDIO_STANDARD.md` |

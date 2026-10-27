@@ -45,6 +45,13 @@ def verify(root=ROOT):
     manifest = json.loads(mf.read_text(encoding='utf-8'))
     expected = manifest['files']
     actual = hashes(root)
+    for name in ('references/RING_STYLE.md', 'scripts/hdv/ring_style.py',
+                 'assets/ring-styles/ring-guides.json', 'assets/ring-styles/ring-02.svg', 'assets/ring-styles/ring-03.svg'):
+        if name not in actual:
+            errors.append('必要圈画资源缺失：' + name)
+    if (root / 'assets/ring-styles/ring-01.svg').exists():
+        errors.append('已淘汰的 01 圈画不得进入素材包')
+
     required = ('SKILL.md', 'scripts/new_project.py', 'scripts/render_film.py',
                 'scripts/check_visual_manifest.py', 'scripts/audio/generate_candidate.py',
                 'upstream/SOURCES.json', 'references/ENGINE_GUIDE.md',
