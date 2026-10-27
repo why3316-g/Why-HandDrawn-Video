@@ -116,12 +116,16 @@ class Film:
     def bubble(self, i, cx, cy, rx, ry, s, size, at, color=INK):
         self.line(i, self.ell(cx, cy, rx, ry), at, .35, color, 5, True, 'pop'); self.text(i, s, cx - len(s) * size / 2, cy + size * .3, size, at + .3, .3, color)
 
-    def ring(self, i, s, x, y, size, at, dur=.4, color=OR):
-        """圈住 text(i, s, x, y, size, …) 写的字。y 是文字基线（不是顶部）；圈的位置按字的真实包围盒算，不要手写 ell 坐标去圈字。"""
+    def ring(self, i, s, x, y, size, at, dur=.4, color=OR, style='normal'):
+        """圈住文字：normal 常规、key 关键结论、special 特殊；y 为文字基线。"""
         from .lint import text_w
+        from .ring_style import ring_strokes
         w = text_w(s, size)
-        # 四次超椭圆：普通椭圆在字多时两端变窄，会从首尾字的上下角穿过去；超椭圆两端仍留够高度，1–8 字都圈在字外。
-        self.line(i, self.squircle(x + w / 2, y - size * .34, w / 2 + size * .5, size * .66), at, dur, color, 6, True, 'ring:' + s)
+        elapsed = 0.0
+        for n, (points, line_width, fraction) in enumerate(ring_strokes(w, size, style)):
+            self.line(i, [(x + px, y + py) for px, py in points], at + elapsed, dur * fraction,
+                      color, line_width, False, 'ring:' + s if n == 0 else 'ring-detail')
+            elapsed += dur * fraction
 
     def phone(self, i, x, y, w, h, at):
         self.box(i, x, y, w, h, at, .4); self.line(i, [(x + 15, y + 45), (x + w - 15, y + 45)], at + .43, .14)

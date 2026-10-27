@@ -6,9 +6,45 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
 from hdv.dsl import Film
 from hdv.lint import text_w
+from hdv.ring_style import ring_strokes
 
 
 class RingTests(unittest.TestCase):
+    def test_approved_styles_keep_strokes_outside_text_and_are_distinct(self):
+        size = 60
+        for n in range(1, 9):
+            width = text_w('字' * n, size)
+            for style in ('normal', 'key', 'special'):
+                strokes = ring_strokes(width, size, style)
+                self.assertAlmostEqual(sum(s[2] for s in strokes), 1.0)
+                for points, pen_width, _ in strokes:
+                    # Count the physical pen width, not just the centerline.
+                    for (ax, ay), (bx, by) in zip(points, points[1:]):
+                        for k in range(11):
+                            px = ax + (bx - ax) * k / 10
+                            py = ay + (by - ay) * k / 10
+                            radius = pen_width / 2
+                            self.assertFalse(-radius < px < width + radius and
+                                             -size * .82 - radius < py < size * .12 + radius,
+                                             f'{style} {n}字圈线碰到字框')
+        self.assertLess(ring_strokes(240, size, 'normal')[0][1], ring_strokes(240, size, 'key')[0][1])
+        self.assertGreaterEqual(len(ring_strokes(240, size, 'special')), 5)
+
+    def test_default_and_explicit_style_emit_sequential_draw_events(self):
+        for style in ('normal', 'key', 'special'):
+            film = Film.__new__(Film)
+            film.EV = []
+            film.ring(0, '重点', 200, 500, 60, 1, dur=1, style=style)
+            self.assertEqual(film.EV[0]['tag'], 'ring:重点')
+            self.assertTrue(all(e['kind'] == 'line' for e in film.EV))
+            self.assertAlmostEqual(film.EV[-1]['at'] + film.EV[-1]['dur'], 2, places=2)
+        film = Film.__new__(Film)
+        film.EV = []
+        film.ring(0, '重点', 200, 500, 60, 1)
+        self.assertEqual(film.EV[0]['width'], 3)
+        with self.assertRaises(ValueError):
+            film.ring(0, '重点', 200, 500, 60, 1, style='unknown')
+
     def test_ring_stays_outside_text_box(self):
         size = 60
         for n in range(1, 9):
