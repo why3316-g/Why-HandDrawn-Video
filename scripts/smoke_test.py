@@ -123,8 +123,8 @@ wide=cfg.get('mode')=='landscape'
 cx,top,h=(1380,300,550) if wide else (540,700,550)
 F.panel(0,'hook',0)
 F.hero(0,'hook',cx,top,h,c.T('孩子')[0],c.T('玩手机')[0]-c.T('孩子')[0])
-F.text(0,'玩手机',145,480,72,c.T('玩手机')[0],.85,OR)
-F.line(0,[(145,530),(560,530)],c.T('手机')[0],.45,INK,6,False)
+F.text(0,'玩手机',145,480,72,c.T('玩手机')[0],.4,OR)
+F.line(0,[(145,530),(560,530)],c.T('玩手机')[0]+.45,.2,INK,6,False)
 if wide:
     from PIL import Image
     with Image.open(P/'assets/images/document-fixture.png') as im:
@@ -132,13 +132,19 @@ if wide:
     F.media(0,'../assets/images/document-fixture.png',120,610,w,h,1.0,.4,document_id='fixture')
 F.panel(1,'next',c.T('妈妈')[0]-.1)
 F.hero(1,'next',cx,top,h,c.T('妈妈')[0],c.T('看着他')[0]-c.T('妈妈')[0])
-F.text(1,'看着他',145,480,72,c.T('看着他')[0],.85,OR)
-F.line(1,[(145,530),(560,530)],c.T('他')[0],.35,INK,6,False)
+F.text(1,'看着他',145,480,72,c.T('看着他')[0],.4,OR)
+F.line(1,[(145,530),(560,530)],c.T('看着他')[0]+.45,.2,INK,6,False)
 caps=[{'start':c.line_span(i)[0],'end':c.line_span(i)[1],'text':t} for i,t in enumerate(c.lines)]
 F.build(caps,out='design/spec-film.json')
 '''
     (project / 'design/film.py').write_text(film, encoding='utf-8')
     run([sys.executable, project / 'design/film.py'], project)
+    fixture_spec=json.loads((project/'design/spec-film.json').read_text(encoding='utf-8'))
+    fixture_panels=[]
+    for sc in fixture_spec['data']['scenes']:
+        indices=[n for n,e in enumerate(fixture_spec['data']['events']) if e['index']==sc['index']]
+        fixture_panels.append({'index':sc['index'],'layout_reason':'技术夹具：验证渲染入口，不替代真实构图审核','text_anchor':'fixture','alternatives':['左侧','右侧'],'caption_zone':[80,930,1840,1010] if fixture_spec['width']==1920 else [80,1438,1000,1518],'protected_bounds':[],'text_bounds_with_marks':[],'intentional_whitespace':'技术夹具','draw_units':[{'id':str(n),'meaning':'技术测试单元','completion':'完成该事件','events':[n]} for n in indices]})
+    (project/'design/composition.json').write_text(json.dumps({'version':1,'panels':fixture_panels},ensure_ascii=False),encoding='utf-8')
     script('make_manifest.py')
     render_args = [] if args.online_runtime else ['--offline']
     script('render_film.py', '--out', 'renders/smoke-visual-v01.mp4', *render_args)

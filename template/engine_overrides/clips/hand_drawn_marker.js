@@ -246,9 +246,7 @@ CLIPS.hand_drawn_marker = (() => {
       }
       g.drawImage(hand, 0, 0);
       g.restore(); }
-    g.fillStyle = INK; const H = ctx.data.header;
-    if (sc.index === 0) { g.font = '48px "LXGWWenKai-500"'; g.fillText(H.first[0], L.header_x, L.header_first_y[0]); g.font = '43px "LXGWWenKai-500"'; g.fillText(H.first[1], L.header_x, L.header_first_y[1]); }
-    else { g.font = '44px "LXGWWenKai-500"'; g.fillText(H.other, L.header_x, L.header_other_y); }
+    // Persistent titles removed by user decision, 2026-10-28.
     caption(g, t, ctx);
     const fade = U.clamp((t - (ctx.dur - .7)) / .6); if (fade > 0) { g.fillStyle = `rgba(255,255,255,${fade})`; g.fillRect(0, 0, L.width, L.height); }   // 结尾 0.6s 淡出到白板，不突然定格
   }

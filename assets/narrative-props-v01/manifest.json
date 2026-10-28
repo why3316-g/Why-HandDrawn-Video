@@ -1,0 +1,202 @@
+{
+  "version": 1,
+  "approved_on": "2026-10-28",
+  "source": "approved-reference.png",
+  "source_sha256": "459a78c757f4e8754d1081b6c076db7eb4e9bed05d9c7981c7debb717ef50df1",
+  "tool": "Codex built-in imagegen; model version not exposed; ffmpeg lossless crop",
+  "background": "opaque white; approved object pixels retained; lamp label margin masked white; not transparent",
+  "items": [
+    {
+      "id": "phone",
+      "label": "手机",
+      "file": "phone.png",
+      "crop": [
+        30,
+        665,
+        249,
+        830
+      ],
+      "sha256": "f718fda20f60ccd29ddd9921a1531a9df4da6f3370f774f210e9a55b95a29511",
+      "approved": true,
+      "usage": "仅表达原文已有物件；白底专用，不能覆盖人物",
+      "min_display_width": 140,
+      "max_display_width": 320
+    },
+    {
+      "id": "alarm-clock",
+      "label": "闹钟",
+      "file": "alarm-clock.png",
+      "crop": [
+        264,
+        661,
+        493,
+        830
+      ],
+      "sha256": "c5efda7a3309f53410b4fb84eaf5cc8800d3870e3cfd3b9326f6c08e217487f6",
+      "approved": true,
+      "usage": "仅表达原文已有物件；白底专用，不能覆盖人物；印刷数字仅为示意，不得用作真实日期/时间/测量读数",
+      "min_display_width": 140,
+      "max_display_width": 320
+    },
+    {
+      "id": "calendar",
+      "label": "日历",
+      "file": "calendar.png",
+      "crop": [
+        502,
+        673,
+        714,
+        838
+      ],
+      "sha256": "6810b0c4bc388dd12aa0400323a96ad4e496e91063e29618a49fe26e8b09d7e7",
+      "approved": true,
+      "usage": "仅表达原文已有物件；白底专用，不能覆盖人物；印刷数字仅为示意，不得用作真实日期/时间/测量读数",
+      "min_display_width": 140,
+      "max_display_width": 320
+    },
+    {
+      "id": "school",
+      "label": "学校",
+      "file": "school.png",
+      "crop": [
+        724,
+        665,
+        997,
+        838
+      ],
+      "sha256": "17dc390708f440b4913ec76cfa9d077e297079eeeeb8b67a93281b4808f622b4",
+      "approved": true,
+      "usage": "仅表达原文已有物件；白底专用，不能覆盖人物",
+      "min_display_width": 140,
+      "max_display_width": 320
+    },
+    {
+      "id": "schoolbag",
+      "label": "书包",
+      "file": "schoolbag.png",
+      "crop": [
+        28,
+        884,
+        245,
+        1055
+      ],
+      "sha256": "efcb0d57c7e20b44cecd8988c40d2e636bf328e2df8b7ab65656c17938338772",
+      "approved": true,
+      "usage": "仅表达原文已有物件；白底专用，不能覆盖人物",
+      "min_display_width": 140,
+      "max_display_width": 320
+    },
+    {
+      "id": "book",
+      "label": "书本",
+      "file": "book.png",
+      "crop": [
+        266,
+        898,
+        493,
+        1055
+      ],
+      "sha256": "4eed6ba78ccff483adc9aa15b9728858e01f93d1f020919d619fa5807f6fb937",
+      "approved": true,
+      "usage": "仅表达原文已有物件；白底专用，不能覆盖人物",
+      "min_display_width": 140,
+      "max_display_width": 320
+    },
+    {
+      "id": "medicine",
+      "label": "药板",
+      "file": "medicine.png",
+      "crop": [
+        510,
+        902,
+        749,
+        1045
+      ],
+      "sha256": "390287e4b1867ddd8184ccbbec6846748b0f9dd51c5bc044a6c97fd202415e93",
+      "approved": true,
+      "usage": "仅表达原文已有物件；白底专用，不能覆盖人物",
+      "min_display_width": 140,
+      "max_display_width": 320
+    },
+    {
+      "id": "thermometer",
+      "label": "体温计",
+      "file": "thermometer.png",
+      "crop": [
+        750,
+        903,
+        994,
+        1037
+      ],
+      "sha256": "2005e31a94e9b357b3c2317ea2d0d55004ae89d95e7d280e5eca5266b4962c65",
+      "approved": true,
+      "usage": "仅表达原文已有物件；白底专用，不能覆盖人物；印刷数字仅为示意，不得用作真实日期/时间/测量读数",
+      "min_display_width": 140,
+      "max_display_width": 320
+    },
+    {
+      "id": "door",
+      "label": "房门",
+      "file": "door.png",
+      "crop": [
+        26,
+        1103,
+        248,
+        1295
+      ],
+      "sha256": "2d786fec69146822810dd1bd5a4881598cafb2f234a71eaf179a5ec662a29dc7",
+      "approved": true,
+      "usage": "仅表达原文已有物件；白底专用，不能覆盖人物",
+      "min_display_width": 140,
+      "max_display_width": 320
+    },
+    {
+      "id": "tissues",
+      "label": "纸巾盒",
+      "file": "tissues.png",
+      "crop": [
+        266,
+        1101,
+        494,
+        1288
+      ],
+      "sha256": "4973a8ce561fa660c5204d1762873bfa899f53cca5dd074eca8f37ce5b2a7f28",
+      "approved": true,
+      "usage": "仅表达原文已有物件；白底专用，不能覆盖人物",
+      "min_display_width": 140,
+      "max_display_width": 320
+    },
+    {
+      "id": "chat",
+      "label": "聊天气泡",
+      "file": "chat.png",
+      "crop": [
+        514,
+        1120,
+        753,
+        1270
+      ],
+      "sha256": "6b7968303286c899dfcf22ad9fc568a28415cac4f62655aa38a7593a3d2d0169",
+      "approved": true,
+      "usage": "仅表达原文已有物件；白底专用，不能覆盖人物",
+      "min_display_width": 140,
+      "max_display_width": 320
+    },
+    {
+      "id": "lamp",
+      "label": "台灯",
+      "file": "lamp.png",
+      "crop": [
+        775,
+        1080,
+        998,
+        1297
+      ],
+      "sha256": "7d29aa4706a51ba79d97659af72fc7a92cc5673d9e05678fec2cd8cd7facd86c",
+      "approved": true,
+      "usage": "仅表达原文已有物件；白底专用，不能覆盖人物",
+      "min_display_width": 140,
+      "max_display_width": 320
+    }
+  ]
+}

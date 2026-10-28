@@ -65,6 +65,7 @@ print('render.py 补丁：', engine_fixes.patch_render(P / 'engine/render.py'))
 shutil.copy(SKILL / 'template/engine_overrides/clips/hand_drawn_marker.js', P / 'engine/clips/hand_drawn_marker.js')
 shutil.copytree(SKILL / 'scripts/hdv', P / 'design/hdv', ignore=shutil.ignore_patterns('__pycache__'))
 shutil.copytree(SKILL / 'assets/ring-styles', P / 'assets/images/ring-styles')
+shutil.copytree(SKILL / 'assets/narrative-props-v01', P / 'assets/images/narrative-props-v01')
 for f in ('config.json', 'film.py', 'shots.json', 'cast.json', 'breaks.json'):
     shutil.copy(SKILL / 'template/design' / f, P / 'design' / f)
 for f in ('BRIEF.md', 'narration.txt', 'title.txt'):
@@ -80,8 +81,8 @@ if a.content_type == 'institutional_promo':
 if a.mode == 'landscape':
     config['logic_plan'] = 'design/logic-plan.json'
     shutil.copy(SKILL / 'template/design/logic-plan.json', P / 'design/logic-plan.json')
-    config['header_first'] = ['本片主题（锁稿后填写）', '本节要点（取自口播）']
-    config['header_other'] = '本片主题'
+    config['header_first'] = ['', '']
+    config['header_other'] = ''
 # 手与笔：竖屏与宽屏同一套——随机取素材池一张，全片同一张，手臂归一到右下 45°（2026-10-26 用户定稿）。
 hand_note = ''
 entry = None

@@ -19,7 +19,7 @@ class Film:
         self.lib = json.loads((self.P / lib_json).read_text(encoding='utf-8'))
         self.EV, self.PANELS = [], []
         self._resolve_hand(hand, hand_tip)
-        self.header_first, self.header_other = list(header_first), header_other
+        self.header_first, self.header_other = ['', ''], ''  # 2026-10-28: no persistent title
         self.tail, self.fps, self.grammar = tail, fps, grammar
         self.aspect = {k: v['rect'][2] / v['rect'][3] for k, v in self.lib['sprites'].items()}
 

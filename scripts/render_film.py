@@ -62,6 +62,8 @@ if layout['mode']=='landscape':
     if problems:
         sys.exit('宽屏逻辑策划未通过：'+'；'.join(problems))
 if not a.draft:
+    composition = subprocess.run([sys.executable, str(Path(__file__).parent / 'check_composition.py'), '--project', str(P), '--spec', str(spec)])
+    if composition.returncode: sys.exit('构图与落笔检查未通过，停止正式渲染')
     if not chk.is_file() or not json.loads(chk.read_text(encoding='utf-8')).get('pass'):
         sys.exit('资产使用检查未通过或未运行：先运行 make_manifest.py（规范要求：检查不通过禁止渲染）。仅做草稿可加 --draft。')
 out = P / a.out
