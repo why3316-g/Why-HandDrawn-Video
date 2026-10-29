@@ -168,7 +168,7 @@ add('Chromium 缓存目录', bool(chromium), str(pb) if chromium else '未发现
 ws = find_workspace(a.project)
 add('工作区', bool(ws), str(ws) if ws else '空目录：new_project.py 会先创建同步规则和目录标识', required=False)
 comp = companion_references(ws)
-add('品牌扩展包：陪伴师五张审核参考（可选）', len(list(comp.glob('*.png'))) == 5, str(comp) if comp.is_dir() else '未安装（公开版默认不带，不影响其他赛道）', '', required=False)
+add('品牌扩展包：陪伴师四张审核参考（可选）', len(list(comp.glob('*.png'))) == 4, str(comp) if comp.is_dir() else '未安装（公开版默认不带，不影响其他赛道）', '', required=False)
 logo = brand_logo(ws)
 add('品牌扩展包：品牌原 Logo（可选）', logo.is_file(), str(logo) if logo.is_file() else '未安装（公开版默认不带）', '', required=False)
 envf = ws / '.private/volcengine.env' if ws else None

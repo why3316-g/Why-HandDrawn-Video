@@ -20,3 +20,6 @@
 
 ## 宽屏风格定稿
 landscape与portrait是两种独立风格。宽屏手部按 references/HAND_POOL.md：公开版不带素材池图片，退回到 assets/marker-hand-landscape-v01.png 短手（scale .18、袖口原样收口、后方留白）；自用版则与竖屏同一素材池、同一 45°。无装饰竖色条；按内容穿插居中人物、居中文字/逻辑和左右讲解。唯一标准references/LANDSCAPE_LOGIC.md。竖屏原实现保留；用户明确原文直转时不强制改写。
+
+## 排字测量与一次成片交付（2026-10-28）
+- 排字前先运行 measure_panels.py 量图并看联系表，逐板写 design/layout-plan.json（理由、摆位、至少两条备选），窄人物移到一侧、字写另一侧空区，禁止全片同一左栏；渲染前 self_check.py --stage pre 并逐张看联系表、--ack-viewed 记录，成片后 self_check.py --stage post --video <成片>，机器项全过、联系表看完，才把成片和 qc/self-check.md 一起交给用户。用户闸门只有声音锁定、人物+封面审核、最终确认；不得把未自检的初稿交给用户审，独立审片默认由自检脚本加逐张目检完成。Claude Code、Codex、WorkBuddy、Antigravity 等工具同样执行，只靠脚本与图片，工具看不了图片时说明并停在自检步骤。

@@ -29,3 +29,9 @@ Codex 与 Antigravity 的内置生图路径下，图像必须保存到提示词�
 - Python 路径用 `E:/...`，不用 `/e/...`；每个脚本（尤其 `mix_audio.py`、`make_cover.py`）都先设置 `PYTHONUTF8=1`、`PYTHONIOENCODING=utf-8`；`PLAYWRIGHT_BROWSERS_PATH` 指向本机浏览器目录（脚本会自动设置）。
 - 大文件用写文件工具，不用超长 heredoc。
 - 渲染前 `new_project.py` 会给项目内引擎副本打补丁（UTF-8 读取、本地服务队列、失败请求日志）；补丁断言上游代码模式，上游变了会报错而不是静默跳过。
+
+## 跨 AI 工具通用执行（2026-10-28）
+- 新规范的所有环节都落成了脚本和图片：`measure_panels.py`（量图）、`build_composition.py`（构图记录）、`check_composition.py`（构图检测）、`self_check.py`（渲染前/成片后自检与联系表）。Claude Code、Codex、WorkBuddy、Gemini Antigravity 等工具只需能运行 Python 脚本并查看图片，流程完全一致，没有任何工具专属步骤。
+- 工具无法查看图片时：把联系表路径交给用户或说明无法目检，停在自检步骤，不以"脚本通过"代替目检，也不跳过。
+- 子智能体不是流程必需：自检脚本加制作者逐张看联系表即视为完成独立审片；各工具的子智能体/第二模型复核仅在用户要求时使用。
+- 不得因为某工具不会用某个命令就改写检查、手搓替代脚本或跳过闸门；缺能力就停下报告。

@@ -25,6 +25,66 @@ def bounds(e, data):
         return [e['cx']-w/2,e['top'],e['cx']+w/2,e['top']+e['h']]
 
 
+def _close(a, b, tol=6):
+    return all(abs(x - y) <= tol for x, y in zip(a, b))
+
+
+def variety_errors(data, plan, scenes, events, layout):
+    """防"照抄一套坐标"：排字同质化、人物全居中、窄人物旁不用空位、构图理由套话。只在 ≥6 块板时检查。"""
+    errors = []
+    if len(scenes) < 6:
+        return errors
+    width = layout.get('width', 1080)
+    n = len(scenes)
+    # 1) 构图记录不得是同一段套话
+    plans = {p['index']: p for p in plan.get('panels', [])}
+    def tail(s):
+        return s.split('：', 1)[-1].strip() if s else ''
+    for field in ('text_anchor', 'layout_reason'):
+        vals = [tail(plans[s['index']].get(field, '')) for s in scenes if s['index'] in plans]
+        if vals:
+            top = max(vals.count(v) for v in vals)
+            if top >= max(4, int(n * .5)):
+                errors.append(f'{n}块板里有{top}块的{field}完全相同：构图理由必须逐板按量出的人物边界写（EDITING_COMPOSITION 第9节）')
+    alts = [json.dumps(plans[s['index']].get('alternatives', []), ensure_ascii=False) for s in scenes if s['index'] in plans]
+    if alts and max(alts.count(a) for a in alts) >= max(4, int(n * .5)):
+        errors.append('多块板的备选方案完全相同：备选须针对本板的人物与空区各自写')
+    # 2) 人物摆位与文字锚点
+    centers, hero_cx, narrow, beside = [], [], 0, 0
+    for sc in scenes:
+        i = sc['index']
+        es = [e for e in events if e.get('index') == i]
+        texts = [e for e in es if e['kind'] == 'text' and not e.get('fade')]
+        heroes = [bounds(e, data) for e in es if e['kind'] == 'hero']
+        for t in texts:
+            tb = bounds(t, data)
+            centers.append((tb[0] + tb[2]) / 2)
+        if not heroes:
+            continue
+        hb = heroes[0]
+        hero_cx.append(round((hb[0] + hb[2]) / 2 / 60))
+        if hb[2] - hb[0] < width * .45:
+            narrow += 1
+            hh = hb[3] - hb[1]
+            for t in texts:
+                tb = bounds(t, data)
+                ov = min(tb[3], hb[3]) - max(tb[1], hb[1])
+                if ov >= (tb[3] - tb[1]) * .6 and (tb[2] <= hb[0] or tb[0] >= hb[2]):
+                    beside += 1
+                    break
+    if len(centers) >= 8:
+        thirds = [sum(1 for c in centers if lo <= c < hi) for lo, hi in ((0, width / 3), (width / 3, width * 2 / 3), (width * 2 / 3, width + 1))]
+        if thirds[0] > len(centers) * .5 or max(thirds) > len(centers) * .6:
+            errors.append(f'排字位置同质化：左/中/右三分之一的文字数为 {thirds[0]}/{thirds[1]}/{thirds[2]}，超过一半挤在同一侧。请按每张图的空区逐板重新定位（measure_panels.py 的联系表）')
+        if thirds[2] < len(centers) * .1:
+            errors.append(f'排字位置同质化：右侧几乎没有字（{thirds[2]}/{len(centers)}）；窄人物应移到左侧，字写在右侧空区')
+    if len(hero_cx) >= 8 and len(set(hero_cx)) < 3:
+        errors.append('人物全部居中：窄人物应按量图结果移到一侧，字写在另一侧空区')
+    if narrow >= 4 and beside < max(1, int(narrow * .25)):
+        errors.append(f'{narrow}张窄人物板里只有{beside}块把字写在人物旁：窄人物两侧的空位没利用（人物高度范围内应有字，除非记录了有意留白）')
+    return errors
+
+
 def check(spec, plan):
     errors=[]; warnings=[]; data=spec['data']; events=data.get('events', [])
     duration=spec.get('duration',0)
@@ -45,6 +105,8 @@ def check(spec, plan):
     if any(e.get('index') not in scene_ids for e in events): errors.append('事件引用不存在的画板')
     layout=data.get('layout', {})
     safe=layout.get('text_bounds',[40,285,1040,1425])
+    clock=layout.get('clock',[932,322,24]); clock_box=[clock[0]-clock[2]-8,clock[1]-clock[2]-8,clock[0]+clock[2]+8,clock[1]+clock[2]+8]
+    errors.extend(variety_errors(data,plan,data.get('scenes',[]),events,layout))
     for scene in data.get('scenes', []):
         i=scene['index']; p=panels.get(i)
         if not p:
@@ -89,11 +151,18 @@ def check(spec, plan):
             if b:
                 if b[0]<safe[0] or b[1]<safe[1] or b[2]>safe[2] or b[3]>safe[3]:
                     errors.append(f'事件{n}超出可见安全区')
+                if e['kind'] in ('text','line') and intersects(b,clock_box):
+                    errors.append(f'文字事件{n}压住右上角小时钟')
                 if e['kind'] in ('text','line'):
                     for protected in p.get('protected_bounds', []):
                         if intersects(b,protected): errors.append(f'文字事件{n}遮挡脸/手/关键结构')
                     if p.get('caption_zone') and intersects(b,p['caption_zone']):
                         errors.append(f'文字事件{n}侵入字幕区')
+        for n,e in selected:
+            if e['kind']=='hero':
+                hb=bounds(e,data)
+                if p.get('protected_bounds') and not any(_close(hb,pb) for pb in p['protected_bounds']):
+                    errors.append(f'板{i}protected_bounds与事件表人物位置不符：须由 build_composition.py 实测生成，不得手填')
         for box in p.get('text_bounds_with_marks', []):
             if any(intersects(box,b) for b in p.get('protected_bounds', [])):
                 errors.append(f'板{i}圈线整体遮挡关键结构')

@@ -18,10 +18,12 @@ panel, text, line, hero, box, arrow, cross, check, bubble, phone, ell = F.panel,
 #   画的东西只来自口播，屏幕文字取口播原文，勾/叉等非重点标记用墨色（INK），橙色每块 ≤ 3–4 个。自检不通过会拒绝输出 spec。
 # 画板坐标：portrait 宽1080、可见y285–1455；landscape 宽1920、可见y190–900，安全区与模板见 references/LANDSCAPE_SPEC.md。每块画板：panel(序号, 'id', 起始秒)，起始 = 该意思单元第一句口播起点 - 0.1。
 # 文字起笔 = S('口播里的原词')；人物 hero(序号, 'id', 中心x, 顶y, 高, 起笔, 时长)；id 必须与 design/shots.json 的镜头 id 对应。
-# 下面是占位示例，换成本视频的画板：
+# 【排字先量图：references/EDITING_COMPOSITION.md 第 9 节】先 measure_panels.py，按联系表给每块板选人物摆位（居中/靠左/靠右）和文字空区，不得全片同一左栏；
+#   理由写进 design/layout-plan.json。窄人物 cx 移到一侧，字写另一侧；顶部字右端避开右上小时钟（x<880）。
+# 下面只是语法示例，坐标不是默认排版，必须换成按本视频量图得出的位置：
 # panel(0, 'hook', 0.0)
-# hero(0, 'hook', 330, 600, 640, .55, 1.3)
-# text(0, '关键词', 100, 495, 80, S('关键词'), .7, OR)
+# hero(0, 'hook', <由量图得出的 cx>, <top>, <h>, .55, 1.3)
+# text(0, '关键词', <x>, <y>, 80, S('关键词'), .7, OR)
 raise SystemExit('design/film.py 还是模板：请按本视频口播写画板（参照 examples/xiaoyu/film.py）。')
 
 # ======================= 字幕 + 输出（通用）=======================

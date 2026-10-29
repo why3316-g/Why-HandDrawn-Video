@@ -194,14 +194,14 @@ def logged_attachments(project_root, image_name):
                 found = record
     if found is None or 'attached_ref' not in found:
         return None
-    return found['attached_ref']
+    return [str(x).replace(chr(92), '/') for x in found['attached_ref']]
 
 
 def validate_logged_attachments(project_root, image_name, required_paths):
     actual = logged_attachments(project_root, image_name)
     if actual is None:
         raise ValueError(f'{image_name}: 缺少实际生图附图记录；Codex 内置生图须填写 imagegen-run.json 的 attached_ref')
-    missing = set(required_paths) - set(actual)
+    missing = {str(x).replace(chr(92), '/') for x in required_paths} - set(actual)
     if missing:
         raise ValueError(f'{image_name}: 妈妈/班主任服饰参考未实际附加：{sorted(missing)}')
     return actual

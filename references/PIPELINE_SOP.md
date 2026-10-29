@@ -48,3 +48,9 @@ landscape在第4步写表演分镜前，按LANDSCAPE_LOGIC.md逐段分析完整�
 > 2026-10-28 更新：构图与绘制顺序先按 `EDITING_COMPOSITION.md` 第1—4节执行。本文固定坐标仅为示例，不是默认排版；完整语义单元优先于凑事件数。情绪与物件已获审核；取消全部常驻标题，正式渲染执行构图检测。
 
 > 2026-10-28最终决定：所有固定标题/歌名取消，旧标题坐标不再执行；封面和叙事关键词保留。正式渲染须通过 EDITING_COMPOSITION 第7节检查。
+
+## 自检优先与一次成片（2026-10-28，覆盖本页第 7、9、12 步中与之冲突的做法）
+- **第 7 步前**：`python <skill>/scripts/measure_panels.py` 量图并看联系表；写 `design/layout-plan.json` 逐板构图计划；写完事件表后 `build_composition.py` 生成 composition.json。窄人物移到一侧、字写另一侧空区，禁止全片同一左栏（EDITING_COMPOSITION 第 9 节）。
+- **第 8 步后、整片渲染前**：`self_check.py --stage pre`，逐张看它生成的联系表（写到一半/写完），改到全部通过，再 `--ack-viewed` 记录。
+- **第 9 步**：整片画面版渲染一次；独立审片由自检脚本加逐张联系表目检完成，子智能体仅在用户要求或自检无法判定时使用。画面返工先用静帧验证再重渲，不拿整片渲染试错。
+- **第 12 步**：`self_check.py --stage post --video <成片>` 全部通过并看完联系表，才把成片和 `qc/self-check.md` 给用户。用户闸门只有声音锁定、人物+封面审核、最终确认（EDITING_COMPOSITION 第 10 节）。

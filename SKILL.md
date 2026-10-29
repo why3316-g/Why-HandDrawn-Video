@@ -17,7 +17,7 @@ description: 把标题和口播稿制作成白纸线稿、橙色强调、马克�
 
 读取 `references/PIPELINE_SOP.md`，运行 `python <skill>/scripts/env_check.py --install`（自动安装缺失的运行依赖、不需要逐项征求同意）并告诉用户结果；正式制作再用 `--production` 检查服务配置。缺项先处理，检查失败不能继续冒充完成。
 
-按 SOP 执行，声音锁定、人物逐图与封面审核、最终成片确认处必须等待用户；已明确的决定沿用。配乐由执行工具从已授权库自动选择，不设挑曲闸门。独立审片不得省略。
+按 SOP 执行，声音锁定、人物逐图与封面审核、最终成片确认处必须等待用户；已明确的决定沿用。配乐由执行工具从已授权库自动选择，不设挑曲闸门。独立审片不得省略，默认由 `self_check.py` 加制作者逐张看联系表完成（见下文「排字测量与一次成片交付」）。
 
 **声音闸门（强制）**：第 3 步生成全文配音并跑完 `check_voice.py` 后，向用户发试听消息（音频绝对路径、音色与选择理由、时长、红/黄项逐条），然后**结束本轮回复，等用户试听**；等待期间不做第 4 步及之后的任何事（不写表演表、不出封面底稿、不生图）。用户在对话里明确说通过/锁定后，运行 `python <skill>/scripts/lock_voice.py --audio <mp3> --user-says "<用户原话>"` 记录；没有这份记录，`gen_sprites.py` 和封面生图拒绝运行。用户没明确说通过时，不得自行运行 lock_voice.py。
 
@@ -54,3 +54,9 @@ description: 把标题和口播稿制作成白纸线稿、橙色强调、马克�
 
 ## 宽屏独立风格
 landscape先读references/LANDSCAPE_LOGIC.md：全文关系策划与真实原件检索，穿插居中人物、居中逻辑/说明及左右讲解；手部按 references/HAND_POOL.md（公开版不带素材池图片，退回 assets/marker-hand-landscape-v01.png 短手），袖口原样收口、后方留白，不加左侧装饰竖色条。portrait竖屏保留自身风格与实现。
+
+## 排字测量与一次成片交付（2026-10-28，强制）
+
+- 排字前先 `scripts/measure_panels.py` 量图，逐板写 `design/layout-plan.json`，再 `build_composition.py`；窄人物移一侧、字写另一侧空区，全片同一左栏会被 `check_composition.py` 拦下。详见 `references/EDITING_COMPOSITION.md` 第 9 节。
+- 按成品标准一次做完：渲染前 `self_check.py --stage pre` 并逐张看联系表、`--ack-viewed` 记录；成片后 `self_check.py --stage post --video <成片>`；机器项全部通过、联系表看完，才把成片和 `qc/self-check.md` 交给用户。不得把未自检的初稿交给用户审。用户闸门只有声音锁定、人物+封面审核、最终确认。
+- 所有 AI 工具（Claude Code、Codex、WorkBuddy、Antigravity 等）同样执行；只靠脚本和图片，无工具专属步骤。

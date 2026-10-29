@@ -66,7 +66,7 @@ shutil.copy(SKILL / 'template/engine_overrides/clips/hand_drawn_marker.js', P / 
 shutil.copytree(SKILL / 'scripts/hdv', P / 'design/hdv', ignore=shutil.ignore_patterns('__pycache__'))
 shutil.copytree(SKILL / 'assets/ring-styles', P / 'assets/images/ring-styles')
 shutil.copytree(SKILL / 'assets/narrative-props-v01', P / 'assets/images/narrative-props-v01')
-for f in ('config.json', 'film.py', 'shots.json', 'cast.json', 'breaks.json'):
+for f in ('config.json', 'film.py', 'shots.json', 'cast.json', 'breaks.json', 'layout-plan.json'):
     shutil.copy(SKILL / 'template/design' / f, P / 'design' / f)
 for f in ('BRIEF.md', 'narration.txt', 'title.txt'):
     shutil.copy(SKILL / 'template/brief' / f, P / 'brief' / f)
@@ -132,9 +132,9 @@ if comp_refs.is_dir():
     logo = brand_logo(ws)
     if logo.is_file():
         shutil.copy(logo, P / 'assets/references/companion-logo-reference-v01.png')
-        print('已复制陪伴师5张场景参考图及品牌 Logo 参考。')
+        print('已复制陪伴师4张场景参考图及品牌 Logo 参考。')
     else:
-        print('已复制陪伴师5张场景参考图；缺少品牌 Logo 原图，陪伴师生图前请补齐。')
+        print('已复制陪伴师4张场景参考图；缺少品牌 Logo 原图，陪伴师生图前请补齐。')
 else:
     print('未安装品牌扩展包（陪伴师参考图与 Logo，可选）；使用通用人物规范即可。')
 engine_fixes.make_qa(hs / 'scripts/qa.py', P / 'qc/huashu_qa.py')

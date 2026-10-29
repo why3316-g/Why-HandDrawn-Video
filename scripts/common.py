@@ -40,7 +40,7 @@ def find_library(start):
 def companion_references(workspace=None):
     local = Path(workspace) / 'assets/characters/companion-references-v01' if workspace else None
     expected = ['01-线上-书桌手机通话.png', '02-线上-床边手机通话.png', '03-线上-家庭共看手机.png',
-                '04-线下-倾听青少年.png', '05-线下-倾听家长.png']
+                '04-线下-倾听青少年.png']
     if local and all((local / name).is_file() for name in expected):
         return local
     return SKILL / 'assets/characters/companion-references-v01'
