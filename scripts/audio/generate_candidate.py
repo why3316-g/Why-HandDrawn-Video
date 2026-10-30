@@ -22,27 +22,19 @@ def workspace_for(project):
         raise ValueError('Project must be inside the selected workspace projects directory.')
     return workspace
 
-VOICES = {'dayi': 'zh_male_dayi_uranus_bigtts', 'xiaohe': 'zh_female_xiaohe_uranus_bigtts',
-          'wenroumama': 'zh_female_wenroumama_uranus_bigtts'}
-# 音色槽位：dayi=大壹（默认）；xiaohe=小何 2.0（学生第一人称，女生或性别不明）；
-# wenroumama=温柔妈妈 2.0（家长角度且家长是妈妈。2026-10-22 起取代鸡汤女 2.0——鸡汤女偏慢、停顿多、不自然，已停用）
-# 每个音色的默认语速（火山 audio_params.speech_rate，取值 [-50,100]，100=2.0 倍速、0=1.0 倍速）。
-# 2026-10-21：鸡汤女 2.0 偏慢，用户后台测试值 14；2026-10-22 用户改选温柔妈妈 2.0，定稿语速 19（≈1.19 倍）。
-# 大壹与小何 2.0 仍为 10（≈1.1 倍）。命令行 --speech-rate 只在用户明确要求时覆盖，且必须写进回执。
-SPEECH_RATE = {'dayi': 10, 'xiaohe': 10, 'wenroumama': 19}
+VOICES = {'dayi': 'zh_male_dayi_uranus_bigtts', 'xiaohe': 'zh_female_xiaohe_uranus_bigtts'}
+# 音色槽位（2026-10-29 起只批准两个）：dayi=大壹（男讲述者，默认）；xiaohe=小何 2.0（女讲述者）。
+# 温柔妈妈 2.0 与鸡汤女 2.0 均已停用（用户判定不满意）。
+# 默认语速（火山 audio_params.speech_rate，[-50,100]，100=2.0 倍速、0=1.0 倍速）：大壹、小何 2.0 均为 10（≈1.1 倍）。
+# 命令行 --speech-rate 只在用户明确要求时覆盖，且必须写进回执。
+SPEECH_RATE = {'dayi': 10, 'xiaohe': 10}
 from institutional_profile import PROFILE as INSTITUTIONAL, select_voice, broadcast_tts_class
 VOICES['yichen'] = INSTITUTIONAL['voice_id']
 SPEECH_RATE['yichen'] = INSTITUTIONAL['speech_rate']
 
 
-# 每个音色的默认语音指令（additions.context_texts，仅 2.0 音色可用、只第一个值生效、不计费）。
-# 温柔妈妈 2.0 定稿配方：语速 19 + 下面这条「重指令」+ 生成后压停顿（compress_pauses.py --cap 0.35）。
-# 2026-10-22 实测（同段 116 字）：无指令 21.72 s / 5.34 字/s / 中位基频 182 Hz；
-# 加这条重指令 19.85 s / 5.84 字/s / 198 Hz（更急）；再压停顿 19.34 s / 6.00 字/s / 最长静音 0.38 s。
-# 轻指令（「自然一点、别拖」）实测无效，甚至更慢，所以指令必须把情绪说透。改这条指令前先跑 audition_variants.py 横评。
-VOICE_DIRECTIVES = {
-    'wenroumama': '你现在很着急，几乎不给喘气的机会，一口气把话说完，声音有点发紧。',
-}
+# 每个音色的默认语音指令（additions.context_texts，仅 2.0 音色可用）。当前两个批准音色都不带默认指令；机制保留给将来经用户批准的配方。
+VOICE_DIRECTIVES = {}
 
 
 
@@ -63,7 +55,7 @@ def speech_rate_for(voice, profile, override=None):
 
 def check_private_voice(values):
     if values.get('DOUBAO_SPEECH_VOICE_TYPE') not in VOICES.values():
-        raise ValueError('Private voice is not an approved voice (dayi/xiaohe/wenroumama).')
+        raise ValueError('Private voice is not an approved voice (dayi/xiaohe).')
 
 
 def other_voice_receipt(project, text_hash, voice_id):
@@ -184,7 +176,7 @@ def run(project,version='v01',preflight=False,voice=None,confirm_voice_change=Fa
     project=Path(project).resolve()
     workspace=workspace_for(project)
     voice=select_voice(project,voice)
-    if voice not in VOICES: raise ValueError('Unknown voice; use dayi, xiaohe or wenroumama.')
+    if voice not in VOICES: raise ValueError('Unknown voice; use dayi or xiaohe.')
     voice_id=VOICES[voice]
     if not re.fullmatch(r'v\d{2,}',version): raise ValueError('Invalid version.')
     text=(project/'brief/narration.txt').read_text(encoding='utf-8').strip()
@@ -296,10 +288,10 @@ if __name__=='__main__':
     parser.add_argument('--project',required=True)
     parser.add_argument('--version',default='v01')
     parser.add_argument('--provider',default='auto',choices=('auto','volcengine','edge'),help='auto=配了火山密钥用火山、没配用免费微软语音；也可在工作区 .hdv-workspace.json 写 tts_provider 固定')
-    parser.add_argument('--voice',default=None,choices=sorted(VOICES),help='dayi=大壹（默认）；xiaohe=小何 2.0，仅学生第一人称且为女生或性别不明的稿子；wenroumama=温柔妈妈 2.0，仅家长角度且家长是妈妈的稿子（家长是爸爸用 dayi）。鸡汤女 2.0 已于 2026-10-22 停用')
+    parser.add_argument('--voice',default=None,choices=sorted(VOICES),help='dayi=大壹（男讲述者，默认）；xiaohe=小何 2.0（女讲述者，含女学生、妈妈）；性别不明的学生第一人称稿用 xiaohe。')
     parser.add_argument('--confirm-voice-change',action='store_true',help='同一全文已用另一音色合成过，用户明确同意换声再合成时才加')
-    parser.add_argument('--speech-rate',type=int,default=None,help='火山 audio_params.speech_rate，[-50,100]，100=2.0 倍速。不填则按音色默认：大壹/小何 10、温柔妈妈 19。只在用户明确要求改语速时使用，值会写进回执')
-    parser.add_argument('--context-texts',default=None,help='覆盖音色默认语音指令（additions.context_texts）。温柔妈妈 2.0 默认已带「重指令」配方，非必要不要改；改前先跑 audition_variants.py 横评')
+    parser.add_argument('--speech-rate',type=int,default=None,help='火山 audio_params.speech_rate，[-50,100]，100=2.0 倍速。不填则按音色默认：大壹/小何 10。只在用户明确要求改语速时使用，值会写进回执')
+    parser.add_argument('--context-texts',default=None,help='覆盖音色默认语音指令（additions.context_texts）。当前音色默认不带指令；改前先跑 audition_variants.py 横评')
     parser.add_argument('--no-directive',action='store_true',help='关闭音色默认语音指令，仅用于对照实验；正式成片不要用')
     parser.add_argument('--join-lines',action='store_true',help='只去掉 brief/narration.txt 的段间换行（逐字不变，脚本会校验），用于消除段末换行造成的额外停顿；口播原文不改')
     parser.add_argument('--preflight',action='store_true')
@@ -309,13 +301,8 @@ if __name__=='__main__':
             args.speech_rate,args.join_lines,args.context_texts,args.no_directive)
         if not args.preflight:
             print('下一步（顺序不能省）：')
-            print('  1) 温柔妈妈 2.0 必须做停顿压缩：python <skill>/scripts/audio/compress_pauses.py --project . '
-                  f'--wav assets/audio/narration-volcengine-{args.voice}-full-{args.version}.wav '
-                  f'--json assets/audio/narration-volcengine-{args.voice}-full-{args.version}.mp3.json '
-                  '--text brief/narration.txt --cap 0.35 --tag <新版本号>；然后把 design/config.json 的 '
-                  'volc_json/voice_wav/voice_mp3 指过去。')
-            print('  2) 跑 check_voice.py（含 ASR），把试听消息发给用户后结束本轮回复，等用户试听。')
-            print('  3) 用户明确说通过后才运行 lock_voice.py。没锁定前不写表演表、不生图。')
+            print('  1) 跑 check_voice.py（含 ASR），把试听消息发给用户后结束本轮回复，等用户试听。')
+            print('  2) 用户明确说通过后才运行 lock_voice.py。没锁定前不写表演表、不生图。')
     except Exception as exc:
         # Credential-bearing transport errors are never echoed.
         print(json.dumps({'success':False,'error_type':type(exc).__name__,'resubmit_allowed':False}))

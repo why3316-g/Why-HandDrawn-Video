@@ -68,8 +68,8 @@ def audio_config_status(path):
     key = values.get('DOUBAO_SPEECH_API_KEY')
     if not isinstance(key, str) or not key.strip() or any(word in key.lower() for word in ('填写', 'your-key', 'placeholder', 'dummy', 'example')):
         return False, '密钥缺失、为空或仍是示例占位符'
-    if values.get('DOUBAO_SPEECH_VOICE_TYPE') not in ('zh_male_dayi_uranus_bigtts', 'zh_female_xiaohe_uranus_bigtts', 'zh_female_wenroumama_uranus_bigtts'):
-        return False, '音色不是本工作流批准的大壹、小何 2.0 或温柔妈妈 2.0（鸡汤女 2.0 已于 2026-10-22 停用）'
+    if values.get('DOUBAO_SPEECH_VOICE_TYPE') not in ('zh_male_dayi_uranus_bigtts', 'zh_female_xiaohe_uranus_bigtts'):
+        return False, '音色不是本工作流批准的大壹或小何 2.0（温柔妈妈 2.0、鸡汤女 2.0 均已停用）'
     return True, '非空配置与批准音色已核对；实际用哪个音色由 generate_candidate.py --voice 决定；未联网验证账户权限或额度'
 
 

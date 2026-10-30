@@ -9,8 +9,7 @@ import os
 import re
 from pathlib import Path
 
-EDGE_VOICES = {'dayi': 'zh-CN-YunxiNeural', 'xiaohe': 'zh-CN-XiaoxiaoNeural',
-               'wenroumama': 'zh-CN-XiaoxiaoNeural'}   # 音色槽位：dayi=男声，xiaohe=女声，wenroumama=家长女声（微软无成熟妈妈音色，复用晓晓；正式成片必须走火山）
+EDGE_VOICES = {'dayi': 'zh-CN-YunxiNeural', 'xiaohe': 'zh-CN-XiaoxiaoNeural'}
 EDGE_RATE = '+10%'                                                              # 对应火山语速 1.1
 MIN_EDGE_TTS = (7, 3, 1)                                                        # 7.2.x 实测被微软接口 403
 _STRIP = lambda s: re.sub(r'[^一-鿿A-Za-z0-9]', '', s)

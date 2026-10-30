@@ -145,12 +145,8 @@ class PortabilityTests(unittest.TestCase):
             result = module.run(p, preflight=True, voice='xiaohe', provider='volcengine')
             self.assertEqual(result['voice_id'], 'zh_female_xiaohe_uranus_bigtts')
             self.assertTrue(result['output'].endswith('narration-volcengine-xiaohe-full-v01.mp3'))
-            result = module.run(p, preflight=True, voice='wenroumama', provider='volcengine')
-            self.assertEqual(result['voice_id'], 'zh_female_wenroumama_uranus_bigtts')
-            self.assertTrue(result['output'].endswith('narration-volcengine-wenroumama-full-v01.mp3'))
-            self.assertEqual(result['speech_rate'], 19)
-            self.assertIn('很着急', result['voice_directive'])
-            self.assertEqual(result['voice_directive_source'], 'voice_recipe')
+            with self.assertRaises(ValueError):     # 温柔妈妈 2.0 已于 2026-10-29 停用
+                module.run(p, preflight=True, voice='wenroumama', provider='volcengine')
             with self.assertRaises(ValueError):
                 module.run(p, preflight=True, voice='yunhao', provider='volcengine')
 

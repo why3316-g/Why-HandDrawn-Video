@@ -147,17 +147,11 @@ add('uv', bool(uv), uv or '缺失', '加 --install 自动安装（pip install uv
 add('FFmpeg / FFprobe', bool(ff and fp), f'{ff} | {fp}', '加 --install 自动安装，或手动安装 FFmpeg 并加入 PATH')
 hs = find_huashu()
 add('包内手绘引擎、QA、规则', bool(hs), 'upstream/huashu-art-motion（无需另装）', '重新解压完整包')
-# 配音链路三件套 + 停顿压缩工具都属于必需文件：换 AI 工具/换会话执行时，缺任何一个都不能开做
+# 配音链路文件属于必需文件：换 AI 工具/换会话执行时，缺任何一个都不能开做
 for rel in ('scripts/check_visual_manifest.py', 'references/COVER_ART_DIRECTION.md',
             'scripts/audio/generate_candidate.py', 'scripts/audio/directives.py',
-            'scripts/audio/compress_pauses.py', 'assets/fonts/NotoSansSC-VF.ttf'):
+            'assets/fonts/NotoSansSC-VF.ttf'):
     add(rel, (SKILL / rel).is_file(), '包内文件', '重新解压完整包')
-# 配音配方：温柔妈妈 2.0 = 语速 19 + 重指令 + 本地压停顿。后两步要能真跑，不只看文件在不在。
-numpy_ready = importlib.util.find_spec('numpy') is not None
-comp_ok = _compiles('scripts/audio/compress_pauses.py')
-add('配音停顿压缩工具（温柔妈妈配方第 3 步，必需）', comp_ok and numpy_ready,
-    'compress_pauses.py 可执行' if comp_ok and numpy_ready else ('缺少 numpy' if comp_ok else '文件缺失或语法错误'),
-    '重新解压完整包；numpy 缺失时 python -m pip install numpy')
 add('音色试听/变体横评工具（换音色或调参时才用）',
     _compiles('scripts/audio/audition_voices.py') and _compiles('scripts/audio/audition_variants.py'),
     'audition_voices.py / audition_variants.py 可执行', '重新解压完整包', required=False)
