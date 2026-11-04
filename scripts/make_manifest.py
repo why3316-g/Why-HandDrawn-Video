@@ -49,7 +49,7 @@ for s in shots['shots']:
         if s.get('reviewed') is True or s.get('fixed'):
             assets[aid]['quality_review'] = {k: 'pass' for k in ('identity', 'anatomy', 'finish')}
     if not str(s.get('hands_check', '')).strip():
-        problems.append(f"{s['id']}: 缺 hands_check（放大逐只数手：每人两只手、一左一右、各五指、无多出的手或手臂，写清每只手在哪、做什么）")
+        problems.append(f"{s['id']}: 缺 hands_check（放大逐只数手：每人两只手、一左一右、无多出的手或手臂，写清每只手在哪、做什么）")
     obs = s.get('observation') or (fixed[s['fixed']]['observation'] if s.get('fixed') else '')
     if not (s.get('reviewed') is True or s.get('fixed')) or not obs:
         problems.append(f"{s['id']}: 未经逐图验收（需要 reviewed=true 和基于实际图片的 observation）")
