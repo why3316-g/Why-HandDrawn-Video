@@ -60,3 +60,7 @@ landscape先读references/LANDSCAPE_LOGIC.md：全文关系策划与真实原件
 - 排字前先 `scripts/measure_panels.py` 量图，逐板写 `design/layout-plan.json`，再 `build_composition.py`；窄人物移一侧、字写另一侧空区，全片同一左栏会被 `check_composition.py` 拦下。详见 `references/EDITING_COMPOSITION.md` 第 9 节。
 - 按成品标准一次做完：渲染前 `self_check.py --stage pre` 并逐张看联系表、`--ack-viewed` 记录；成片后 `self_check.py --stage post --video <成片>`；机器项全部通过、联系表看完，才把成片和 `qc/self-check.md` 交给用户。不得把未自检的初稿交给用户审。用户闸门只有声音锁定、人物+封面审核、最终确认。
 - 所有 AI 工具（Claude Code、Codex、WorkBuddy、Antigravity 等）同样执行；只靠脚本和图片，无工具专属步骤。
+
+
+## 干货逻辑讲解
+方法、清单、步骤类视频须按 references/KNOWLEDGE_EDITING.md 先做总览和总结卡，组织三层文字与语义进度导航，核对完整可读时间与阅读停留。方法段导航是取消常驻标题的例外，不恢复旧片名组件。
