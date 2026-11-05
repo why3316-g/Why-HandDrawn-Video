@@ -1,6 +1,6 @@
 # 固定手绘的方法与技术指导
 
-本工作流从花叔白板方法、角色路线 C 和确定性验收中整理而来；只提供当前固定画风所需的方法。来源与原哈希见 `upstream/SOURCES.json`，许可见 `THIRD_PARTY_NOTICES.md`。不需要读取或安装另一个 Skill。
+本指南说明当前固定画风所需的制作方法。许可见 `THIRD_PARTY_NOTICES.md`。
 
 ## 从口播到画板
 

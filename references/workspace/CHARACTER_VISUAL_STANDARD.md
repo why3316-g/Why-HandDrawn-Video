@@ -1,4 +1,4 @@
-> 单包执行：人物检查器已在 `<skill>/scripts/check_visual_manifest.py`；本规范随包携带，不要求另装 why-story-visuals。陪伴师参考和 Logo 优先使用当前视频项目 assets/references/，初始来源为本 Skill 的 assets/characters/ 和 assets/brand.
+> 单包执行：人物检查器已在 `<skill>/scripts/check_visual_manifest.py`；本规范随包携带，不要求另装人物检查器。陪伴师参考和 Logo 优先使用当前视频项目 assets/references/，初始来源为本 Skill 的 assets/characters/ 和 assets/brand.
 
 # 叙事视频人物画面规范
 
@@ -98,9 +98,9 @@
 
 ## 新对话及其他工具
 
-本项目 AGENTS.md 和 CLAUDE.md 强制读取本规范。个人 Skill `why-story-visuals` 携带同一规范及复用检查器；在支持 Skill 的工具导入该目录。普通聊天工具先上传本规范并明确要求读取；只修改某次聊天提示词不算持久化。
+本项目 AGENTS.md 和 CLAUDE.md 强制读取本规范。本包携带人物规范和复用检查器。普通聊天工具先上传本规范并明确要求读取；只修改某次聊天提示词不算持久化。
 
 可复制开场：
-> 按 why-story-visuals 的人物画面规范制作。生成陪伴师场景图时，参考 `assets/characters/companion-references-v01/` 的 4 张图，优先设计线上视频通话；不要把 `固定素材/陪伴师.png` 当作新图的默认参考或镜头素材。先按音轨拆表演镜头，写明情绪、眉眼嘴、肢体动作、视线和禁止误读。白色填充、黑线、黑发、橙袖口；胸针使用原 Logo。人物图片默认一幕一图，同图最多2次。生成后逐图对照脚本验收身份、动作和 Logo；不合格重做。
+> 按本包的人物画面规范制作。生成陪伴师场景图时，参考 `assets/characters/companion-references-v01/` 的 4 张图，优先设计线上视频通话；不要把 `固定素材/陪伴师.png` 当作新图的默认参考或镜头素材。先按音轨拆表演镜头，写明情绪、眉眼嘴、肢体动作、视线和禁止误读。白色填充、黑线、黑发、橙袖口；胸针使用原 Logo。人物图片默认一幕一图，同图最多2次。生成后逐图对照脚本验收身份、动作和 Logo；不合格重做。
 
 人物手势应符合动作与情绪，可自然握拳、拿物、垂放或遮挡；漫画不要求逐根数手指，不以手指是否全部可见判不合格。检查手和手臂数量、位置、连接与姿态是否自然，遮挡合理即可。
